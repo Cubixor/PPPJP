@@ -5,18 +5,22 @@
 <statement> → { 
     kończwaść ( <expr> )
     zmienna <type> `ident` równa <expr> 
+    <scope>
+    jeśli ( <expr> ) <statement>
+}
+<scope> → {
+    <statement>*
 }
 <type> → { całkowita }
 <expr> → {
     <term>
-    <bin_expr>
+    <arithmetic_expr>
 }
 <term> → {
-    integer_literal
-    identifier
+    [integer_literal]
+    `identifier`
 }
 <arithmetic_expr> → {
-    (2) <expr> potęgi <expr> //TODO
     (1) <expr> razy <expr> 
     (1) <expr> podzielić <expr>
     (0) <expr> dodać <expr>

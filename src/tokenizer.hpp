@@ -17,6 +17,8 @@ enum class TokenType {
     paren_close,
     sq_brkt_open,
     sq_brkt_close,
+    cur_brkt_close,
+    cur_brkt_open,
     backtick,
     var_decl,
     var_type,
@@ -25,7 +27,9 @@ enum class TokenType {
     add,
     multiply,
     substract,
-    divide
+    divide,
+    condition,
+    colon
 };
 
 struct Token {
@@ -33,6 +37,7 @@ struct Token {
     optional<string> value;
 };
 
+const inline set stmt_tokens = {TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open};
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open};
 const inline set arithmetic_tokens = {TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply};
@@ -142,7 +147,7 @@ public:
                 continue;
             }
 
-            if(comment) {
+            if (comment) {
                 continue;
             }
 
@@ -174,8 +179,17 @@ public:
         if (c == ']') {
             return Token{TokenType::sq_brkt_close, {}};
         }
+        if (c == '{') {
+            return Token{TokenType::cur_brkt_open, {}};
+        }
+        if (c == '}') {
+            return Token{TokenType::cur_brkt_close, {}};
+        }
         if (c == '`') {
             return Token{TokenType::backtick, {}};
+        }
+        if (c == ':') {
+            return Token{TokenType::colon, {}};
         }
 
         return {};
@@ -214,6 +228,9 @@ public:
         }
         if (buff == "podzielić") {
             return Token{TokenType::divide, {}};
+        }
+        if (buff == "jeśli") {
+            return Token{TokenType::condition, {}};
         }
         if (num_values.contains(buff)) {
             return Token{TokenType::int_lit_num, buff};

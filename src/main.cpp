@@ -54,7 +54,7 @@ int main(const int argc, char* argv[]) {
 
     //Generate code
     Generator generator((tree.value()));
-    const string asm_code = generator.generate();
+    const string asm_code = generator.generate_program();
 
 
     write_file(argv[1], asm_code);

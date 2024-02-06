@@ -10,6 +10,7 @@
 using namespace std;
 
 struct NodeExpr;
+struct NodeStatement;
 
 struct NodeTermIntLit {
     string value;
@@ -46,8 +47,17 @@ struct NodeStmtVariable {
     NodeExpr* expr{};
 };
 
+struct NodeStmtScope {
+    vector<NodeStatement *> statements;
+};
+
+struct NodeStmtIf {
+    NodeExpr* expr;
+    NodeStatement* stmt;
+};
+
 struct NodeStatement {
-    variant<NodeStmtExit *, NodeStmtVariable *> var;
+    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *> var;
 };
 
 struct NodeStart {
@@ -62,6 +72,7 @@ public:
 
 
     static int digit_count(const int i) {
+        if (i == 0) return 1;
         return static_cast<int>(log10(static_cast<double>(i))) + 1;
     }
 
@@ -183,6 +194,19 @@ public:
         return term;
     }
 
+    NodeStmtScope* parse_scope() {
+        auto* scope = allocator.alloc<NodeStmtScope>();
+
+        vector<NodeStatement *> statements;
+
+        while (next_token(stmt_tokens, false)) {
+            statements.push_back(parse_statement());
+        }
+
+        scope->statements = statements;
+        return scope;
+    }
+
     NodeStatement* parse_statement() {
         auto* node_statement = allocator.alloc<NodeStatement>();
 
@@ -215,6 +239,30 @@ public:
             node_stmt_variable->expr = expr;
 
             node_statement->var = node_stmt_variable;
+        }
+        else if (it->type == TokenType::cur_brkt_open) {
+            NodeStmtScope* scope = parse_scope();
+
+            next_token({TokenType::cur_brkt_close}, true);
+
+            node_statement->var = scope;
+        }
+        else if (it->type == TokenType::condition) {
+            next_token({TokenType::paren_open}, true);
+
+            NodeExpr* expr = parse_expr();
+
+            next_token({TokenType::paren_close}, true);
+            next_token({TokenType::colon}, true);
+
+            next_token(stmt_tokens, true);
+            NodeStatement* stmt = parse_statement();
+
+            auto* stmt_if = allocator.alloc<NodeStmtIf>();
+            stmt_if->expr = expr;
+            stmt_if->stmt = stmt;
+
+            node_statement->var = stmt_if;
         }
         else {
             cerr << "Not a statement '" << token_names[it->type] << "'!" << endl;
