@@ -51,7 +51,7 @@ struct NodeStmtScope {
     vector<NodeStatement *> statements;
 };
 
-struct NodeIfPredElif {
+struct NodeIfPred {
     NodeExpr* expr;
     NodeStatement* stmt;
 };
@@ -61,9 +61,9 @@ struct NodeIfPredElse {
 };
 
 struct NodeStmtIf {
-    NodeExpr* expr{};
-    NodeStatement* stmt{};
-    optional<NodeIfPredElse*> pred_else;
+    NodeIfPred* pred;
+    optional<NodeIfPredElse *> pred_else;
+    vector<NodeIfPred *> pred_elif;
 };
 
 struct NodeStatement {
@@ -217,6 +217,24 @@ public:
         return scope;
     }
 
+    NodeIfPred* parse_if() {
+        next_token({TokenType::paren_open}, true);
+
+        NodeExpr* expr = parse_expr();
+
+        next_token({TokenType::paren_close}, true);
+        next_token({TokenType::colon}, true);
+
+        next_token(stmt_tokens, true);
+        NodeStatement* stmt = parse_statement();
+
+        auto* if_pred = allocator.alloc<NodeIfPred>();
+        if_pred->expr = expr;
+        if_pred->stmt = stmt;
+
+        return if_pred;
+    }
+
     NodeStatement* parse_statement() {
         auto* node_statement = allocator.alloc<NodeStatement>();
 
@@ -258,30 +276,27 @@ public:
             node_statement->var = scope;
         }
         else if (it->type == TokenType::cond_if) {
-            next_token({TokenType::paren_open}, true);
-
-            NodeExpr* expr = parse_expr();
-
-            next_token({TokenType::paren_close}, true);
-            next_token({TokenType::colon}, true);
-
-            next_token(stmt_tokens, true);
-            NodeStatement* stmt = parse_statement();
+            NodeIfPred* if_pred = parse_if();
 
             auto* stmt_if = allocator.alloc<NodeStmtIf>();
-            stmt_if->expr = expr;
-            stmt_if->stmt = stmt;
+            stmt_if->pred = if_pred;
 
-            if(next_token({TokenType::cond_else}, false)){
-                next_token({TokenType::colon}, true);
+            while (next_token({TokenType::cond_else}, false)) {
+                if (next_token({TokenType::cond_if}, false)) {
+                    NodeIfPred* elif_pred = parse_if();
+                    stmt_if->pred_elif.push_back(elif_pred);
+                }
+                else {
+                    next_token({TokenType::colon}, true);
 
-                next_token(stmt_tokens, true);
-                NodeStatement* else_stmt = parse_statement();
+                    next_token(stmt_tokens, true);
+                    NodeStatement* else_stmt = parse_statement();
 
-                auto* pred_else = allocator.alloc<NodeIfPredElse>();
-                pred_else->stmt = else_stmt;
+                    auto* pred_else = allocator.alloc<NodeIfPredElse>();
+                    pred_else->stmt = else_stmt;
 
-                stmt_if->pred_else = pred_else;
+                    stmt_if->pred_else = pred_else;
+                }
             }
 
             node_statement->var = stmt_if;

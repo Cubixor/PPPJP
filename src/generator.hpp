@@ -91,6 +91,14 @@ public:
         visit(visitor, term->var);
     }
 
+    void generate_if_pred(const NodeIfPred* pred_if, const string&false_label, const string&end_label) {
+        generate_expr(pred_if->expr);
+        pop_stack(RAX);
+        test_condition(false_label);
+        generate_statement(pred_if->stmt);
+        jump(end_label);
+    }
+
     void generate_statement(NodeStatement* stmt) {
         struct StatementVisitor {
             Generator&gen;
@@ -124,25 +132,23 @@ public:
             }
 
             void operator()(const NodeStmtIf* stmt_if) const {
-                gen.generate_expr(stmt_if->expr);
-                gen.pop_stack(RAX);
+                const string&end_label = gen.create_label();
+                string false_label = gen.create_label();
+                gen.generate_if_pred(stmt_if->pred, false_label, end_label);
 
-                const string false_label = gen.create_label();
-                gen.test_condition(false_label);
+                for (const NodeIfPred* pred_if: stmt_if->pred_elif) {
+                    gen.label(false_label);
+                    false_label = gen.create_label();
+                    gen.generate_if_pred(pred_if, false_label, end_label);
+                }
 
-                gen.generate_statement(stmt_if->stmt);
+                gen.label(false_label);
 
                 if (stmt_if->pred_else.has_value()) {
-                    const string true_label = gen.create_label();
-                    gen.jump(true_label);
-
-                    gen.label(false_label);
                     gen.generate_statement(stmt_if->pred_else.value()->stmt);
-                    gen.label(true_label);
                 }
-                else {
-                    gen.label(false_label);
-                }
+
+                gen.label(end_label);
             }
         };
         StatementVisitor visitor{*this};
