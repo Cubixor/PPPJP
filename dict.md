@@ -6,10 +6,10 @@
     kończwaść ( <expr> )
     zmienna <type> `ident` równa <expr> 
     <scope>
-    jeśli ( <expr> ) <statement>
+    jeśli ( <expr> ): <statement> *przeciwnie jeśli ( <expr> ): <statement>* *przeciwnie: <statement>*
 }
 <scope> → {
-    <statement>*
+    { <statement>* }
 }
 <type> → { całkowita }
 <expr> → {

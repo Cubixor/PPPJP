@@ -127,11 +127,22 @@ public:
                 gen.generate_expr(stmt_if->expr);
                 gen.pop_stack(RAX);
 
-                const string label = gen.create_label();
-                gen.test_condition(label);
+                const string false_label = gen.create_label();
+                gen.test_condition(false_label);
 
                 gen.generate_statement(stmt_if->stmt);
-                gen.label(label);
+
+                if (stmt_if->pred_else.has_value()) {
+                    const string true_label = gen.create_label();
+                    gen.jump(true_label);
+
+                    gen.label(false_label);
+                    gen.generate_statement(stmt_if->pred_else.value()->stmt);
+                    gen.label(true_label);
+                }
+                else {
+                    gen.label(false_label);
+                }
             }
         };
         StatementVisitor visitor{*this};
@@ -206,6 +217,10 @@ private:
     void test_condition(const string&label) {
         asm_out << "    test rax, rax" << endl;
         asm_out << "    jz " << label << endl;
+    }
+
+    void jump(const string&label) {
+        asm_out << "    jmp " << label << endl;
     }
 
     void label(const string&label) {

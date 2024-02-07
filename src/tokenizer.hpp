@@ -28,7 +28,8 @@ enum class TokenType {
     multiply,
     substract,
     divide,
-    condition,
+    cond_if,
+    cond_else,
     colon
 };
 
@@ -230,7 +231,10 @@ public:
             return Token{TokenType::divide, {}};
         }
         if (buff == "jeśli") {
-            return Token{TokenType::condition, {}};
+            return Token{TokenType::cond_if, {}};
+        }
+        if (buff == "przeciwnie") {
+            return Token{TokenType::cond_else, {}};
         }
         if (num_values.contains(buff)) {
             return Token{TokenType::int_lit_num, buff};

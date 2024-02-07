@@ -51,9 +51,19 @@ struct NodeStmtScope {
     vector<NodeStatement *> statements;
 };
 
-struct NodeStmtIf {
+struct NodeIfPredElif {
     NodeExpr* expr;
     NodeStatement* stmt;
+};
+
+struct NodeIfPredElse {
+    NodeStatement* stmt;
+};
+
+struct NodeStmtIf {
+    NodeExpr* expr{};
+    NodeStatement* stmt{};
+    optional<NodeIfPredElse*> pred_else;
 };
 
 struct NodeStatement {
@@ -247,7 +257,7 @@ public:
 
             node_statement->var = scope;
         }
-        else if (it->type == TokenType::condition) {
+        else if (it->type == TokenType::cond_if) {
             next_token({TokenType::paren_open}, true);
 
             NodeExpr* expr = parse_expr();
@@ -261,6 +271,18 @@ public:
             auto* stmt_if = allocator.alloc<NodeStmtIf>();
             stmt_if->expr = expr;
             stmt_if->stmt = stmt;
+
+            if(next_token({TokenType::cond_else}, false)){
+                next_token({TokenType::colon}, true);
+
+                next_token(stmt_tokens, true);
+                NodeStatement* else_stmt = parse_statement();
+
+                auto* pred_else = allocator.alloc<NodeIfPredElse>();
+                pred_else->stmt = else_stmt;
+
+                stmt_if->pred_else = pred_else;
+            }
 
             node_statement->var = stmt_if;
         }
