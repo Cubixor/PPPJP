@@ -66,8 +66,13 @@ struct NodeStmtIf {
     vector<NodeIfPred *> pred_elif;
 };
 
+struct NodeStmtAssign {
+    Token ident;
+    NodeExpr* expr{};
+};
+
 struct NodeStatement {
-    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *> var;
+    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *> var;
 };
 
 struct NodeStart {
@@ -300,6 +305,21 @@ public:
             }
 
             node_statement->var = stmt_if;
+        }
+        else if (it->type == TokenType::backtick) {
+            next_token({TokenType::var_ident}, true);
+            const Token ident = *it;
+
+            next_token({TokenType::backtick}, true);
+            next_token({TokenType::var_assign}, true);
+
+            NodeExpr* expr = parse_expr();
+
+            auto* stmt_assign = allocator.alloc<NodeStmtAssign>();
+            stmt_assign->ident = ident;
+            stmt_assign->expr = expr;
+
+            node_statement->var = stmt_assign;
         }
         else {
             cerr << "Not a statement '" << token_names[it->type] << "'!" << endl;

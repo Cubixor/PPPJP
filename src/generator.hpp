@@ -77,9 +77,7 @@ public:
                     exit(EXIT_FAILURE);
                 }
 
-                const size_t stack_loc = gen.stack_vars.at(*ident);
-                const size_t offset = (gen.stack_size - stack_loc - 1) * 8;
-                const string qword_offset = "QWORD [rsp + " + to_string(offset) + "]";
+                const string qword_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
                 gen.push_stack(qword_offset);
             }
 
@@ -150,6 +148,19 @@ public:
 
                 gen.label(end_label);
             }
+
+            void operator()(const NodeStmtAssign* stmt_assign) const {
+                const string&ident = stmt_assign->ident.value.value();
+
+                if (!gen.stack_vars.contains(ident)) {
+                    cerr << "Identifier not declared '" << ident << "'!" << endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                gen.generate_expr(stmt_assign->expr);
+                gen.pop_stack(RAX);
+                gen.mov_reg("[rsp + " + gen.get_variable_offset(ident) + "]", RAX);
+            }
         };
         StatementVisitor visitor{*this};
         visit(visitor, stmt->var);
@@ -185,6 +196,10 @@ private:
     vector<size_t> scopes;
     int if_label_count = 0;
 
+    string get_variable_offset(const string&ident) const {
+        const size_t stack_loc = stack_vars.at(ident);
+        return to_string(stack_size - stack_loc - 1 * 8);
+    }
 
     void push_stack(const string&reg) {
         asm_out << "    push " << reg << endl;

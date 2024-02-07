@@ -5,6 +5,7 @@
 <statement> → { 
     kończwaść ( <expr> )
     zmienna <type> `ident` równa <expr> 
+    `ident` równa <expr>
     <scope>
     jeśli ( <expr> ): <statement> *przeciwnie jeśli ( <expr> ): <statement>* *przeciwnie: <statement>*
 }

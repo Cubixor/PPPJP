@@ -38,14 +38,15 @@ struct Token {
     optional<string> value;
 };
 
-const inline set stmt_tokens = {TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open};
+const inline set stmt_tokens = {TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick};
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open};
 const inline set arithmetic_tokens = {TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply};
 
 inline unordered_map<TokenType, string> token_names = {
-    {TokenType::exit, "kończwaść"},
-    {TokenType::int_lit_num, "<integer_literal>"},
+    {TokenType::exit, "kończwaść (<expression>)"},
+    {TokenType::int_lit_num, "[<integer_literal>]"},
+    {TokenType::int_lit_mul, ""},
     {TokenType::paren_open, "("},
     {TokenType::paren_close, ")"},
     {TokenType::sq_brkt_close, "]"},
@@ -55,6 +56,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::var_ident, "<variable_name>"},
     {TokenType::backtick, "`"},
     {TokenType::var_assign, "równa"},
+    {TokenType::backtick, "`"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
