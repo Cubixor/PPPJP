@@ -7,7 +7,16 @@
     zmienna <type> `ident` równa <expr> 
     `ident` równa <expr>
     <scope>
-    jeśli ( <expr> ): <statement> *przeciwnie jeśli ( <expr> ): <statement>* *przeciwnie: <statement>*
+    jeśli ( <expr> ): <statement> 
+        [przeciwnie jeśli ( <expr> ): <statement>] 
+        [przeciwnie: <statement>]
+    powtarzaj: <statement>/<loop_flow_stmt>
+    powtarzaj jeśli ( <expr> ): <statement>/<loop_flow_stmt>
+    
+}
+<loop_flow_stmt> → {
+    przerwij
+    kontynuuj
 }
 <scope> → {
     { <statement>* }
@@ -22,6 +31,7 @@
     `identifier`
 }
 <arithmetic_expr> → {
+    (1) <expr> modulo <expr> 
     (1) <expr> razy <expr> 
     (1) <expr> podzielić <expr>
     (0) <expr> dodać <expr>
@@ -29,12 +39,7 @@
 }
 ```
 
-<br>
-repetycja → while <br>
-jeśliby → if <br>
-kończwaść → return
-
-## Code example
+## Code example //TODO
 
 ```
 zmienna całkowita `a1` równa [dwa tysiące dwadzieścia cztery]
