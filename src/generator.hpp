@@ -11,6 +11,7 @@ using namespace std;
 
 const string RAX = "rax";
 const string RBX = "rbx";
+const string RDX = "rdx";
 const string RDI = "rdi";
 
 class Generator {
@@ -28,21 +29,27 @@ public:
         switch (expr->type) {
             case TokenType::add:
                 add(RAX, RBX);
+                push_stack(RAX);
                 break;
             case TokenType::multiply:
                 multiply(RBX);
+                push_stack(RAX);
                 break;
             case TokenType::substract:
                 subtract(RAX, RBX);
+                push_stack(RAX);
                 break;
             case TokenType::divide:
                 divide(RBX);
+                push_stack(RAX);
+                break;
+            case TokenType::modulo:
+                divide(RBX);
+                push_stack(RDX);
                 break;
             default:
                 assert(false); //Unreachable
         }
-
-        push_stack(RAX);
     }
 
     void generate_expr(NodeExpr* expr) {
@@ -166,7 +173,7 @@ public:
             void operator()(const NodeStmtWhile* stmt_while) const {
                 const string start_label = gen.get_new_label();
                 const string end_label = gen.get_new_label();
-                auto label_pair  = pair{start_label, end_label};
+                auto label_pair = pair{start_label, end_label};
                 gen.loop_labels.emplace(label_pair);
 
                 gen.label(start_label);
@@ -182,7 +189,7 @@ public:
 
                 gen.label(end_label);
 
-                if(!gen.loop_labels.empty() && gen.loop_labels.top() == label_pair) {
+                if (!gen.loop_labels.empty() && gen.loop_labels.top() == label_pair) {
                     gen.loop_labels.pop();
                 }
             }

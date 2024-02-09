@@ -28,6 +28,7 @@ enum class TokenType {
     multiply,
     substract,
     divide,
+    modulo,
     cond_if,
     cond_else,
     colon,
@@ -47,7 +48,7 @@ const inline set stmt_tokens = {
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open};
-const inline set arithmetic_tokens = {TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply};
+const inline set arithmetic_tokens = {TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo};
 
 inline unordered_map<TokenType, string> token_names = {
     {TokenType::exit, "kończwaść (<expression>)"},
@@ -84,6 +85,7 @@ static int get_prec(const TokenType type) {
             return 0;
         case TokenType::multiply:
         case TokenType::divide:
+        case TokenType::modulo:
             return 1;
         default:
             assert(false); //Unreachable
@@ -237,6 +239,9 @@ public:
         }
         if (buff == "podzielić") {
             return Token{TokenType::divide, {}};
+        }
+        if (buff == "modulo") {
+            return Token{TokenType::modulo, {}};
         }
         if (buff == "jeśli") {
             return Token{TokenType::cond_if, {}};
