@@ -30,7 +30,10 @@ enum class TokenType {
     divide,
     cond_if,
     cond_else,
-    colon
+    colon,
+    loop,
+    loop_break,
+    loop_continue,
 };
 
 struct Token {
@@ -38,7 +41,10 @@ struct Token {
     optional<string> value;
 };
 
-const inline set stmt_tokens = {TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick};
+const inline set stmt_tokens = {
+    TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
+    TokenType::loop, TokenType::loop_break, TokenType::loop_continue
+};
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open};
 const inline set arithmetic_tokens = {TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply};
@@ -237,6 +243,15 @@ public:
         }
         if (buff == "przeciwnie") {
             return Token{TokenType::cond_else, {}};
+        }
+        if (buff == "powtarzaj") {
+            return Token{TokenType::loop, {}};
+        }
+        if (buff == "przerwij") {
+            return Token{TokenType::loop_break, {}};
+        }
+        if (buff == "kontynuuj") {
+            return Token{TokenType::loop_continue, {}};
         }
         if (num_values.contains(buff)) {
             return Token{TokenType::int_lit_num, buff};

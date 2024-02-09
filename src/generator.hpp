@@ -2,6 +2,7 @@
 
 #include <map>
 #include <sstream>
+#include <stack>
 
 #include "parser.hpp"
 
@@ -130,13 +131,13 @@ public:
             }
 
             void operator()(const NodeStmtIf* stmt_if) const {
-                const string&end_label = gen.create_label();
-                string false_label = gen.create_label();
+                const string&end_label = gen.get_new_label();
+                string false_label = gen.get_new_label();
                 gen.generate_if_pred(stmt_if->pred, false_label, end_label);
 
                 for (const NodeIfPred* pred_if: stmt_if->pred_elif) {
                     gen.label(false_label);
-                    false_label = gen.create_label();
+                    false_label = gen.get_new_label();
                     gen.generate_if_pred(pred_if, false_label, end_label);
                 }
 
@@ -160,6 +161,51 @@ public:
                 gen.generate_expr(stmt_assign->expr);
                 gen.pop_stack(RAX);
                 gen.mov_reg("[rsp + " + gen.get_variable_offset(ident) + "]", RAX);
+            }
+
+            void operator()(const NodeStmtWhile* stmt_while) const {
+                const string start_label = gen.get_new_label();
+                const string end_label = gen.get_new_label();
+                auto label_pair  = pair{start_label, end_label};
+                gen.loop_labels.emplace(label_pair);
+
+                gen.label(start_label);
+
+                if (const auto expr = stmt_while->expr.value()) {
+                    gen.generate_expr(expr);
+                    gen.pop_stack(RAX);
+                    gen.test_condition(end_label);
+                }
+
+                gen.generate_statement(stmt_while->stmt);
+                gen.jump(start_label);
+
+                gen.label(end_label);
+
+                if(!gen.loop_labels.empty() && gen.loop_labels.top() == label_pair) {
+                    gen.loop_labels.pop();
+                }
+            }
+
+            void operator()(const NodeStmtBreak*) const {
+                if (gen.loop_labels.empty()) {
+                    cerr << "'przerwij' not inside any loop!" << endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                const string&label = gen.loop_labels.top().second;
+                gen.jump(label);
+                gen.loop_labels.pop();
+            }
+
+            void operator()(const NodeStmtContinue*) const {
+                if (gen.loop_labels.empty()) {
+                    cerr << "'kontynuuj' not inside any loop!" << endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                const string&label = gen.loop_labels.top().first;
+                gen.jump(label);
             }
         };
         StatementVisitor visitor{*this};
@@ -194,11 +240,12 @@ private:
     size_t stack_size = 0;
     map<string, size_t> stack_vars;
     vector<size_t> scopes;
-    int if_label_count = 0;
+    int label_count = 0;
+    stack<pair<string, string>> loop_labels;
 
     string get_variable_offset(const string&ident) const {
         const size_t stack_loc = stack_vars.at(ident);
-        return to_string(stack_size - stack_loc - 1 * 8);
+        return to_string((stack_size - stack_loc - 1) * 8);
     }
 
     void push_stack(const string&reg) {
@@ -266,7 +313,7 @@ private:
         scopes.pop_back();
     }
 
-    string create_label() {
-        return "if_" + to_string(if_label_count++);
+    string get_new_label() {
+        return "label_" + to_string(label_count++);
     }
 };

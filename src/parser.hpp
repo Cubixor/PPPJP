@@ -66,13 +66,21 @@ struct NodeStmtIf {
     vector<NodeIfPred *> pred_elif;
 };
 
+struct NodeStmtWhile {
+    optional<NodeExpr*> expr;
+    NodeStatement* stmt{};
+};
+
+struct NodeStmtBreak{};
+struct NodeStmtContinue{};
+
 struct NodeStmtAssign {
     Token ident;
     NodeExpr* expr{};
 };
 
 struct NodeStatement {
-    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *> var;
+    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *, NodeStmtWhile *, NodeStmtBreak *, NodeStmtContinue *> var;
 };
 
 struct NodeStart {
@@ -320,6 +328,31 @@ public:
             stmt_assign->expr = expr;
 
             node_statement->var = stmt_assign;
+        }
+        else if (it->type == TokenType::loop) {
+            auto* stmt_while= allocator.alloc<NodeStmtWhile>();
+
+            if(next_token({TokenType::cond_if}, false)) {
+                next_token({TokenType::paren_open}, true);
+
+                NodeExpr* expr = parse_expr();
+                stmt_while->expr = expr;
+
+                next_token({TokenType::paren_close}, true);
+            }
+            next_token({TokenType::colon}, true);
+
+            next_token(stmt_tokens, true);
+            NodeStatement* stmt = parse_statement();
+            stmt_while->stmt = stmt;
+
+            node_statement->var = stmt_while;
+        }
+        else if (it->type == TokenType::loop_break) {
+            node_statement->var = allocator.alloc<NodeStmtBreak>();
+        }
+        else if (it->type == TokenType::loop_continue) {
+            node_statement->var = allocator.alloc<NodeStmtContinue>();
         }
         else {
             cerr << "Not a statement '" << token_names[it->type] << "'!" << endl;
