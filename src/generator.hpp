@@ -214,14 +214,24 @@ public:
                 const string&label = gen.loop_labels.top().first;
                 gen.jump(label);
             }
+
+            void operator()(const NodeStmtPrint* stmt_print) const {
+                gen.generate_expr(stmt_print->expr);
+                gen.pop_stack(RAX);
+                gen.print_int();
+            }
         };
         StatementVisitor visitor{*this};
         visit(visitor, stmt->var);
     }
 
     [[nodiscard]] string generate_program() {
+        /*asm_out << "%include \"printer.asm\"" << endl;
         asm_out << "global _start" << endl;
-        asm_out << "_start:" << endl;
+        asm_out << "_start:" << endl;*/
+
+        asm_out << ""
+
 
         bool contains_exit = false;
         for (NodeStatement* stmt: root.statements) {
@@ -318,6 +328,10 @@ private:
         }
 
         scopes.pop_back();
+    }
+
+    void print_int() {
+        asm_out << "    call _print_int" << endl;
     }
 
     string get_new_label() {

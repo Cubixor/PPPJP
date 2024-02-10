@@ -67,20 +67,28 @@ struct NodeStmtIf {
 };
 
 struct NodeStmtWhile {
-    optional<NodeExpr*> expr;
+    optional<NodeExpr *> expr;
     NodeStatement* stmt{};
 };
 
-struct NodeStmtBreak{};
-struct NodeStmtContinue{};
+struct NodeStmtBreak {
+};
+
+struct NodeStmtContinue {
+};
 
 struct NodeStmtAssign {
     Token ident;
     NodeExpr* expr{};
 };
 
+struct NodeStmtPrint {
+    NodeExpr* expr;
+};
+
 struct NodeStatement {
-    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *, NodeStmtWhile *, NodeStmtBreak *, NodeStmtContinue *> var;
+    variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *, NodeStmtWhile *,
+        NodeStmtBreak *, NodeStmtContinue *, NodeStmtPrint *> var;
 };
 
 struct NodeStart {
@@ -330,9 +338,9 @@ public:
             node_statement->var = stmt_assign;
         }
         else if (it->type == TokenType::loop) {
-            auto* stmt_while= allocator.alloc<NodeStmtWhile>();
+            auto* stmt_while = allocator.alloc<NodeStmtWhile>();
 
-            if(next_token({TokenType::cond_if}, false)) {
+            if (next_token({TokenType::cond_if}, false)) {
                 next_token({TokenType::paren_open}, true);
 
                 NodeExpr* expr = parse_expr();
@@ -353,6 +361,17 @@ public:
         }
         else if (it->type == TokenType::loop_continue) {
             node_statement->var = allocator.alloc<NodeStmtContinue>();
+        }
+        else if (it->type == TokenType::print) {
+            next_token({TokenType::paren_open}, true);
+
+            NodeExpr* expr = parse_expr();
+            auto* stmt_print = allocator.alloc<NodeStmtPrint>();
+            stmt_print->expr = expr;
+
+            next_token({TokenType::paren_close}, true);
+
+            node_statement->var = stmt_print;
         }
         else {
             cerr << "Not a statement '" << token_names[it->type] << "'!" << endl;

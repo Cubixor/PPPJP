@@ -35,6 +35,7 @@ enum class TokenType {
     loop,
     loop_break,
     loop_continue,
+    print
 };
 
 struct Token {
@@ -44,7 +45,7 @@ struct Token {
 
 const inline set stmt_tokens = {
     TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
-    TokenType::loop, TokenType::loop_break, TokenType::loop_continue
+    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open};
@@ -257,6 +258,9 @@ public:
         }
         if (buff == "kontynuuj") {
             return Token{TokenType::loop_continue, {}};
+        }
+        if (buff == "wyświetl") {
+            return Token{TokenType::print, {}};
         }
         if (num_values.contains(buff)) {
             return Token{TokenType::int_lit_num, buff};
