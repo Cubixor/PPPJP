@@ -19,9 +19,31 @@ public:
     explicit Generator(NodeStart root) : root(std::move(root)) {
     }
 
-    void generate_arithm_expr(const NodeArithExpr* expr) {
-        generate_expr(expr->right);
-        generate_expr(expr->left);
+    static void check_token(const TokenType result_type, const TokenType expected_type) {
+        if (result_type == expected_type) return;
+
+        bool ok;
+        switch (expected_type) {
+            case TokenType::var_type_int:
+                ok = arithmetic_tokens.contains(result_type);
+                break;
+            case TokenType::var_type_boolean:
+                ok = boolean_tokens.contains(result_type);
+                break;
+            default: ok = false;
+        }
+
+        if (!ok) {
+            cerr << "Type mismatch! Expected " + get_token_names({expected_type});
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    void generate_arithm_expr(const NodeBinExpr* expr, const TokenType expected_type) {
+        check_token(expr->type, expected_type);
+
+        generate_expr(expr->right, TokenType::var_type_int);
+        generate_expr(expr->left, TokenType::var_type_int);
 
         pop_stack(RAX);
         pop_stack(RBX);
@@ -52,29 +74,38 @@ public:
         }
     }
 
-    void generate_expr(NodeExpr* expr) {
+    void generate_expr(NodeExpr* expr, TokenType expected_type) {
         struct ExprVisitor {
             Generator&gen;
+            TokenType expected_type;
 
-            void operator()(const NodeArithExpr* arith_expr) const {
-                gen.generate_arithm_expr(arith_expr);
+            void operator()(const NodeBinExpr* arith_expr) const {
+                gen.generate_arithm_expr(arith_expr, expected_type);
             }
 
             void operator()(NodeTerm* term) const {
-                gen.generate_term(term);
+                gen.generate_term(term, expected_type);
             }
         };
 
-        ExprVisitor visitor = {*this};
+        ExprVisitor visitor = {*this, expected_type};
         visit(visitor, expr->var);
     }
 
-    void generate_term(NodeTerm* term) {
+    void generate_term(NodeTerm* term, TokenType expected_type) {
         struct TermVisitor {
             Generator&gen;
+            TokenType expected_type;
 
             void operator()(const NodeTermIntLit* term_int_lit) const {
+                check_token(TokenType::var_type_int, expected_type);
                 gen.mov_reg(RAX, term_int_lit->value);
+                gen.push_stack(RAX);
+            }
+
+            void operator()(const NodeTermBoolLit* bool_lit) const {
+                check_token(TokenType::var_type_boolean, expected_type);
+                gen.mov_reg(RAX, bool_lit->value ? "1" : "0");
                 gen.push_stack(RAX);
             }
 
@@ -84,21 +115,23 @@ public:
                     cerr << "Undeclared identifier '" << *ident << "'!" << endl;
                     exit(EXIT_FAILURE);
                 }
+                auto&[location, type] = gen.stack_vars[*ident];
+                check_token(type, expected_type);
 
                 const string qword_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
                 gen.push_stack(qword_offset);
             }
 
             void operator()(const NodeTermParen* term_paren) const {
-                gen.generate_expr(term_paren->expr);
+                gen.generate_expr(term_paren->expr, expected_type);
             }
         };
-        TermVisitor visitor{*this};
+        TermVisitor visitor{*this, expected_type};
         visit(visitor, term->var);
     }
 
     void generate_if_pred(const NodeIfPred* pred_if, const string&false_label, const string&end_label) {
-        generate_expr(pred_if->expr);
+        generate_expr(pred_if->expr, TokenType::var_type_boolean);
         pop_stack(RAX);
         test_condition(false_label);
         generate_statement(pred_if->stmt);
@@ -116,12 +149,12 @@ public:
                     exit(EXIT_FAILURE);
                 }
 
-                gen.stack_vars.insert({*ident, gen.stack_size});
-                gen.generate_expr(stmt_var->expr);
+                gen.stack_vars.insert({*ident, Var{gen.stack_size, stmt_var->type}});
+                gen.generate_expr(stmt_var->expr, stmt_var->type);
             }
 
             void operator()(const NodeStmtExit* stmt_exit) const {
-                gen.generate_expr(stmt_exit->expr);
+                gen.generate_expr(stmt_exit->expr, TokenType::var_type_int);
                 gen.mov_reg(RAX, "60");
                 gen.pop_stack(RDI);
                 gen.syscall();
@@ -164,8 +197,9 @@ public:
                     cerr << "Identifier not declared '" << ident << "'!" << endl;
                     exit(EXIT_FAILURE);
                 }
+                auto&[location, type] = gen.stack_vars[ident];
 
-                gen.generate_expr(stmt_assign->expr);
+                gen.generate_expr(stmt_assign->expr, type);
                 gen.pop_stack(RAX);
                 gen.mov_reg("[rsp + " + gen.get_variable_offset(ident) + "]", RAX);
             }
@@ -179,7 +213,7 @@ public:
                 gen.label(start_label);
 
                 if (const auto expr = stmt_while->expr.value()) {
-                    gen.generate_expr(expr);
+                    gen.generate_expr(expr, TokenType::var_type_boolean);
                     gen.pop_stack(RAX);
                     gen.test_condition(end_label);
                 }
@@ -216,7 +250,7 @@ public:
             }
 
             void operator()(const NodeStmtPrint* stmt_print) const {
-                gen.generate_expr(stmt_print->expr);
+                gen.generate_expr(stmt_print->expr, TokenType::var_type_int);
                 gen.pop_stack(RAX);
                 gen.print_int();
             }
@@ -226,12 +260,9 @@ public:
     }
 
     [[nodiscard]] string generate_program() {
-        /*asm_out << "%include \"printer.asm\"" << endl;
+        asm_out << "%include \"printer.asm\"" << endl;
         asm_out << "global _start" << endl;
-        asm_out << "_start:" << endl;*/
-
-        asm_out << ""
-
+        asm_out << "_start:" << endl;
 
         bool contains_exit = false;
         for (NodeStatement* stmt: root.statements) {
@@ -251,17 +282,24 @@ public:
         return asm_out.str();
     }
 
+    struct Var {
+        size_t location;
+        TokenType type;
+    };
+
 private:
     NodeStart root;
     stringstream asm_out;
+
     size_t stack_size = 0;
-    map<string, size_t> stack_vars;
+    map<string, Var> stack_vars;
+
     vector<size_t> scopes;
     int label_count = 0;
     stack<pair<string, string>> loop_labels;
 
     string get_variable_offset(const string&ident) const {
-        const size_t stack_loc = stack_vars.at(ident);
+        const size_t stack_loc = stack_vars.at(ident).location;
         return to_string((stack_size - stack_loc - 1) * 8);
     }
 

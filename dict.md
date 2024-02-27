@@ -3,16 +3,19 @@
 ```
 <program> → <statement>* 
 <statement> → { 
-    kończwaść ( <expr> )
+    <function>
+    <scope>
     zmienna <type> `ident` równa <expr> 
     `ident` równa <expr>
-    <scope>
-    jeśli ( <expr> ): <statement> 
-        [przeciwnie jeśli ( <expr> ): <statement>] 
+    jeśli ( <boolean_expr> ): <statement> 
+        [przeciwnie jeśli ( <boolean_expr> ): <statement>] 
         [przeciwnie: <statement>]
     powtarzaj: <statement>/<loop_flow_stmt>
-    powtarzaj jeśli ( <expr> ): <statement>/<loop_flow_stmt>
+    powtarzaj jeśli ( <boolean_expr> ): <statement>/<loop_flow_stmt>
     
+}
+<function> → {
+    kończwaść ( <numerical_expr> )
 }
 <loop_flow_stmt> → {
     przerwij
@@ -21,21 +24,54 @@
 <scope> → {
     { <statement>* }
 }
-<type> → { całkowita }
+<type> → { 
+    całkowita 
+    logiczna 
+}
 <expr> → {
-    <term>
+    <numerical_expr>
+    <boolean_expr>
+}
+<numerical_expr> → {
+    <int_term>
     <arithmetic_expr>
 }
-<term> → {
+<int_term> → {
     [integer_literal]
     `identifier`
 }
+<boolean_expr> → {
+    <boolean_term>
+    <boolean_math_expr>
+    <boolean_logic_expr>
+}
+
+<boolean_term> → {
+    <boolean_literal>
+    `identifier`
+}
+<boolean_literal> → {
+    prawda
+    fałsz
+}
 <arithmetic_expr> → {
-    (1) <expr> modulo <expr> 
-    (1) <expr> razy <expr> 
-    (1) <expr> podzielić <expr>
-    (0) <expr> dodać <expr>
-    (0) <expr> odjąć <expr>
+    (1) <numerical_expr> modulo <numerical_expr>
+    (1) <numerical_expr> razy <numerical_expr>
+    (1) <numerical_expr> podzielić <numerical_expr>
+    (0) <numerical_expr> dodać <numerical_expr>
+    (0) <numerical_expr> odjąć <numerical_expr>
+}
+<boolean_math_expr> → {
+    <numerical_expr> równe <numerical_expr>
+    <numerical_expr> różne <numerical_expr>
+    <numerical_expr> większe od <numerical_expr>
+    <numerical_expr> większe równe <numerical_expr>
+    <numerical_expr> mniejsze <numerical_expr>
+    <numerical_expr> mniejsze równe <numerical_expr>
+}
+<boolean_logic_expr> → {
+    <boolean_expr> oraz <boolean_expr>
+    <boolean_expr> lub <boolean_expr>
 }
 ```
 

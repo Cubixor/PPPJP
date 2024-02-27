@@ -16,6 +16,10 @@ struct NodeTermIntLit {
     string value;
 };
 
+struct NodeTermBoolLit {
+    bool value;
+};
+
 struct NodeTermIdent {
     Token ident;
 };
@@ -25,17 +29,17 @@ struct NodeTermParen {
 };
 
 struct NodeTerm {
-    variant<NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
+    variant<NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
 };
 
-struct NodeArithExpr {
+struct NodeBinExpr {
     TokenType type;
     NodeExpr* left;
     NodeExpr* right;
 };
 
 struct NodeExpr {
-    variant<NodeTerm *, NodeArithExpr *> var;
+    variant<NodeTerm *, NodeBinExpr *> var;
 };
 
 struct NodeStmtExit {
@@ -44,6 +48,7 @@ struct NodeStmtExit {
 
 struct NodeStmtVariable {
     Token ident;
+    TokenType type{};
     NodeExpr* expr{};
 };
 
@@ -113,7 +118,7 @@ public:
         int result = 0;
 
         int multiplier = 1;
-        int prev_result = INT_MIN;
+        int prev_result = INT_MAX;
 
         do {
             if (it->type == TokenType::int_lit_mul) {
@@ -131,7 +136,7 @@ public:
             const int value = num_values[it->value.value()];
             const int curr_result = multiplier * value;
 
-            if (digit_count(prev_result) >= digit_count(curr_result)) {
+            if (digit_count(prev_result) <= digit_count(curr_result)) {
                 cerr << "Invalid number" << endl;
                 exit(EXIT_FAILURE);
             }
@@ -170,7 +175,7 @@ public:
 
             const auto expr_rhs = parse_expr(prec + 1);
 
-            auto* node_arith_expr = allocator.alloc<NodeArithExpr>();
+            auto* node_arith_expr = allocator.alloc<NodeBinExpr>();
             const auto expr_lhs = allocator.alloc<NodeExpr>();
 
             expr_lhs->var = node_expr->var;
@@ -216,6 +221,14 @@ public:
 
                 term_paren->expr = expr;
                 term->var = term_paren;
+                break;
+            }
+            case TokenType::bool_true:
+            case TokenType::bool_false: {
+                auto bool_lit = allocator.alloc<NodeTermBoolLit>();
+                bool_lit->value = it->type == TokenType::bool_true;
+
+                term->var = bool_lit;
                 break;
             }
             default: assert(false); //Unreachable
@@ -272,7 +285,8 @@ public:
             node_statement->var = node_stmt_exit;
         }
         else if (it->type == TokenType::var_decl) {
-            next_token({TokenType::var_type}, true);
+            next_token({TokenType::var_type_int, TokenType::var_type_boolean}, true);
+            const Token var_type = *it;
 
             next_token({TokenType::backtick}, true);
             next_token({TokenType::var_ident}, true);
@@ -285,6 +299,7 @@ public:
 
             auto* node_stmt_variable = allocator.alloc<NodeStmtVariable>();
             node_stmt_variable->ident = ident;
+            node_stmt_variable->type = var_type.type;
             node_stmt_variable->expr = expr;
 
             node_statement->var = node_stmt_variable;
