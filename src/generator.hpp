@@ -69,12 +69,42 @@ public:
                 divide(RBX);
                 push_stack(RDX);
                 break;
+            case TokenType::equal:
+                cmp(RAX, RBX);
+                set_equal();
+                push_stack(RAX);
+                break;
+            case TokenType::not_equal:
+                cmp(RAX, RBX);
+                set_not_equal();
+                push_stack(RAX);
+                break;
+            case TokenType::greater:
+                cmp(RAX, RBX);
+                set_greater();
+                push_stack(RAX);
+                break;
+            case TokenType::less:
+                cmp(RAX, RBX);
+                set_less();
+                push_stack(RAX);
+                break;
+            case TokenType::greater_equal:
+                cmp(RAX, RBX);
+                set_greater_equal();
+                push_stack(RAX);
+                break;
+            case TokenType::less_equal:
+                cmp(RAX, RBX);
+                set_less_equal();
+                push_stack(RAX);
+                break;
             default:
                 assert(false); //Unreachable
         }
     }
 
-    void generate_expr(NodeExpr* expr, TokenType expected_type) {
+    void generate_expr(NodeExpr* expr, const TokenType expected_type) {
         struct ExprVisitor {
             Generator&gen;
             TokenType expected_type;
@@ -92,7 +122,7 @@ public:
         visit(visitor, expr->var);
     }
 
-    void generate_term(NodeTerm* term, TokenType expected_type) {
+    void generate_term(NodeTerm* term, const TokenType expected_type) {
         struct TermVisitor {
             Generator&gen;
             TokenType expected_type;
@@ -133,7 +163,8 @@ public:
     void generate_if_pred(const NodeIfPred* pred_if, const string&false_label, const string&end_label) {
         generate_expr(pred_if->expr, TokenType::var_type_boolean);
         pop_stack(RAX);
-        test_condition(false_label);
+        test(RAX);
+        jump_zero(false_label);
         generate_statement(pred_if->stmt);
         jump(end_label);
     }
@@ -212,10 +243,11 @@ public:
 
                 gen.label(start_label);
 
-                if (const auto expr = stmt_while->expr.value()) {
+                if (auto* const expr = stmt_while->expr.value()) {
                     gen.generate_expr(expr, TokenType::var_type_boolean);
                     gen.pop_stack(RAX);
-                    gen.test_condition(end_label);
+                    gen.test(RAX);
+                    gen.jump_zero(end_label);
                 }
 
                 gen.generate_statement(stmt_while->stmt);
@@ -337,8 +369,39 @@ private:
         asm_out << "    syscall" << endl;
     }
 
-    void test_condition(const string&label) {
-        asm_out << "    test rax, rax" << endl;
+    void test(const string&reg) {
+        asm_out << "    test " << reg << ", " << reg << endl;
+    }
+
+    void cmp(const string&reg1, const string&reg2) {
+        asm_out << "    cmp " << reg1 << ", " << reg2 << endl;
+    }
+
+    void set_equal() {
+        asm_out << "    setz al" << endl;
+    }
+
+    void set_not_equal() {
+        asm_out << "    setnz al" << endl;
+    }
+
+    void set_greater() {
+        asm_out << "    setg al" << endl;
+    }
+
+    void set_less() {
+        asm_out << "    setl al" << endl;
+    }
+
+    void set_greater_equal() {
+        asm_out << "    setge al" << endl;
+    }
+
+    void set_less_equal() {
+        asm_out << "    setle al" << endl;
+    }
+
+    void jump_zero(const string&label) {
         asm_out << "    jz " << label << endl;
     }
 

@@ -107,9 +107,9 @@ public:
     }
 
 
-    static int digit_count(const int i) {
-        if (i == 0) return 1;
-        return static_cast<int>(log10(static_cast<double>(i))) + 1;
+    static int digit_count(const int num) {
+        if (num == 0) return 1;
+        return static_cast<int>(log10(static_cast<double>(num))) + 1;
     }
 
     NodeTermIntLit* parse_number() {
@@ -161,28 +161,28 @@ public:
         node_expr->var = node_term;
 
         while (true) {
-            if (!next_token(arithmetic_tokens, false)) {
+            if (!next_token(arithmetic_tokens, false) && !next_token(boolean_tokens, false)) {
                 break;
             }
 
-            const TokenType op = it->type;
-            const int prec = get_prec(op);
+            const TokenType opr = it->type;
+            const int prec = get_prec(opr);
 
             if (prec < min_prec) {
                 --it;
                 break;
             }
 
-            const auto expr_rhs = parse_expr(prec + 1);
+            auto* const expr_rhs = parse_expr(prec + 1);
 
             auto* node_arith_expr = allocator.alloc<NodeBinExpr>();
-            const auto expr_lhs = allocator.alloc<NodeExpr>();
+            auto* const expr_lhs = allocator.alloc<NodeExpr>();
 
             expr_lhs->var = node_expr->var;
 
             node_arith_expr->left = expr_lhs;
             node_arith_expr->right = expr_rhs;
-            node_arith_expr->type = op;
+            node_arith_expr->type = opr;
 
 
             node_expr->var = node_arith_expr;
@@ -193,7 +193,7 @@ public:
     }
 
     [[nodiscard]] NodeTerm* parse_term() {
-        const auto term = allocator.alloc<NodeTerm>();
+        auto* const term = allocator.alloc<NodeTerm>();
 
         switch (it->type) {
             case TokenType::sq_brkt_open: {
@@ -206,7 +206,7 @@ public:
             case TokenType::backtick: {
                 next_token({TokenType::var_ident}, true);
 
-                auto term_ident = allocator.alloc<NodeTermIdent>();
+                auto* term_ident = allocator.alloc<NodeTermIdent>();
                 term_ident->ident = *it;
                 term->var = term_ident;
 
@@ -214,10 +214,10 @@ public:
                 break;
             }
             case TokenType::paren_open: {
-                const auto expr = parse_expr();
+                auto* const expr = parse_expr();
 
                 next_token({TokenType::paren_close}, true);
-                auto term_paren = allocator.alloc<NodeTermParen>();
+                auto* term_paren = allocator.alloc<NodeTermParen>();
 
                 term_paren->expr = expr;
                 term->var = term_paren;
@@ -225,7 +225,7 @@ public:
             }
             case TokenType::bool_true:
             case TokenType::bool_false: {
-                auto bool_lit = allocator.alloc<NodeTermBoolLit>();
+                auto* bool_lit = allocator.alloc<NodeTermBoolLit>();
                 bool_lit->value = it->type == TokenType::bool_true;
 
                 term->var = bool_lit;
@@ -412,7 +412,7 @@ private:
     ArenaAllocator allocator;
 
     bool next_token(const set<TokenType>&expected, const bool required) {
-        const auto next = (it + 1);
+        const auto next = it + 1;
 
         if (next == tokens.end()) {
             if (!required) return false;

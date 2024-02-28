@@ -60,12 +60,15 @@ const inline set stmt_tokens = {
     TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
-const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_true, TokenType::bool_false};
+const inline set term_tokens = {
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_true, TokenType::bool_false
+};
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
 };
 const inline set boolean_tokens = {
-    TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less, TokenType::less_equal
+    TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
+    TokenType::less_equal
 };
 
 inline unordered_map<TokenType, string> token_names = {
@@ -192,7 +195,7 @@ public:
                 continue;
             }
 
-            if (isspace(contents[i])) {
+            if (isspace(contents[i]) != 0) {
                 create_from_buff();
             }
             else if (auto token = try_create_token(contents[i])) {
@@ -245,66 +248,36 @@ public:
         buff.clear();
     }
 
+    const std::map<std::string, TokenType> tokenMap = {
+        {"kończwaśc", TokenType::exit},
+        {"zmienna", TokenType::var_decl},
+        {"całkowita", TokenType::var_type_int},
+        {"równa", TokenType::var_assign},
+        {"dodać", TokenType::add},
+        {"odjąć", TokenType::substract},
+        {"razy", TokenType::multiply},
+        {"podzielić", TokenType::divide},
+        {"modulo", TokenType::modulo},
+        {"jeśli", TokenType::cond_if},
+        {"przeciwnie", TokenType::cond_else},
+        {"powtarzaj", TokenType::loop},
+        {"przerwij", TokenType::loop_break},
+        {"kontynuuj", TokenType::loop_continue},
+        {"wyświetl", TokenType::print},
+        {"logiczna", TokenType::var_type_boolean},
+        {"prawda", TokenType::bool_true},
+        {"fałsz", TokenType::bool_false},
+        {"równe", TokenType::equal},
+        {"różne", TokenType::not_equal},
+        {"większe", TokenType::greater},
+        {"mniejsze", TokenType::less},
+        {"większerówne", TokenType::greater_equal},
+        {"mniejszerówne", TokenType::less_equal}
+    };
+
     [[nodiscard]] Token create_token() const {
-        if (buff == "kończwaść") {
-            return Token{TokenType::exit, {}};
-        }
-        if (buff == "zmienna") {
-            return Token{TokenType::var_decl, {}};
-        }
-        if (buff == "całkowita") {
-            return Token{TokenType::var_type_int, {}};
-        }
-        if (buff == "równa") {
-            return Token{TokenType::var_assign, {}};
-        }
-        if (buff == "dodać") {
-            return Token{TokenType::add, {}};
-        }
-        if (buff == "odjąć") {
-            return Token{TokenType::substract, {}};
-        }
-        if (buff == "razy") {
-            return Token{TokenType::multiply, {}};
-        }
-        if (buff == "podzielić") {
-            return Token{TokenType::divide, {}};
-        }
-        if (buff == "modulo") {
-            return Token{TokenType::modulo, {}};
-        }
-        if (buff == "jeśli") {
-            return Token{TokenType::cond_if, {}};
-        }
-        if (buff == "przeciwnie") {
-            return Token{TokenType::cond_else, {}};
-        }
-        if (buff == "powtarzaj") {
-            return Token{TokenType::loop, {}};
-        }
-        if (buff == "przerwij") {
-            return Token{TokenType::loop_break, {}};
-        }
-        if (buff == "kontynuuj") {
-            return Token{TokenType::loop_continue, {}};
-        }
-        if (buff == "wyświetl") {
-            return Token{TokenType::print, {}};
-        }
-        if (buff == "logiczna") {
-            return Token{TokenType::var_type_boolean, {}};
-        }
-        if (buff == "prawda") {
-            return Token{TokenType::bool_true, {}};
-        }
-        if (buff == "fałsz") {
-            return Token{TokenType::bool_false, {}};
-        }
-        if (buff == "równe") {
-            return Token{TokenType::equal, {}};
-        }
-        if (buff == "różne") {
-            return Token{TokenType::not_equal, {}};
+        if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
+            return Token{it->second, {}};
         }
 
         if (num_values.contains(buff)) {

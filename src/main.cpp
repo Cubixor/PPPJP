@@ -35,7 +35,7 @@ int main(const int argc, char* argv[]) {
         return 1;
     }
 
-    string content = read_file(argv[1]);
+    const string content = read_file(argv[1]);
 
     //Tokenize
     Tokenizer tokenizer(content);
@@ -47,7 +47,7 @@ int main(const int argc, char* argv[]) {
     const optional<NodeStart> tree = parser.parse_program();
 
     if (!tree.has_value()) {
-        std::cerr << "No exit statement found" << std::endl;
+        std::cerr << "No statements found!" << std::endl;
         exit(EXIT_FAILURE);
     }
 
