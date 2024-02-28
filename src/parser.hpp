@@ -161,7 +161,7 @@ public:
         node_expr->var = node_term;
 
         while (true) {
-            if (!next_token(arithmetic_tokens, false)) {
+            if (!next_token(arithmetic_tokens, false) && !next_token(boolean_tokens, false)) {
                 break;
             }
 

@@ -60,12 +60,15 @@ const inline set stmt_tokens = {
     TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
-const inline set term_tokens = {TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_true, TokenType::bool_false};
+const inline set term_tokens = {
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_true, TokenType::bool_false
+};
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
 };
 const inline set boolean_tokens = {
-    TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less, TokenType::less_equal
+    TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
+    TokenType::less_equal
 };
 
 inline unordered_map<TokenType, string> token_names = {
@@ -305,6 +308,18 @@ public:
         }
         if (buff == "różne") {
             return Token{TokenType::not_equal, {}};
+        }
+        if (buff == "większe") {
+            return Token{TokenType::greater, {}};
+        }
+        if (buff == "mniejsze") {
+            return Token{TokenType::less, {}};
+        }
+        if (buff == "większerówne") {
+            return Token{TokenType::greater_equal, {}};
+        }
+        if (buff == "mniejszerówne") {
+            return Token{TokenType::less_equal, {}};
         }
 
         if (num_values.contains(buff)) {
