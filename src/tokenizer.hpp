@@ -279,6 +279,18 @@ public:
         if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
             return Token{it->second, {}};
         }
+        if (buff == "większe") {
+            return Token{TokenType::greater, {}};
+        }
+        if (buff == "mniejsze") {
+            return Token{TokenType::less, {}};
+        }
+        if (buff == "większerówne") {
+            return Token{TokenType::greater_equal, {}};
+        }
+        if (buff == "mniejszerówne") {
+            return Token{TokenType::less_equal, {}};
+        }
 
         if (num_values.contains(buff)) {
             return Token{TokenType::int_lit_num, buff};
