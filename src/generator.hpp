@@ -39,11 +39,17 @@ public:
         }
     }
 
+    static TokenType get_expr_type(const TokenType opr) {
+        if (logical_tokens.contains(opr)) return TokenType::var_type_boolean;
+        return TokenType::var_type_int;
+    }
+
     void generate_arithm_expr(const NodeBinExpr* expr, const TokenType expected_type) {
         check_token(expr->type, expected_type);
 
-        generate_expr(expr->right, TokenType::var_type_int);
-        generate_expr(expr->left, TokenType::var_type_int);
+        const TokenType expected_param_type = get_expr_type(expr->type);
+        generate_expr(expr->right, expected_param_type);
+        generate_expr(expr->left, expected_param_type);
 
         pop_stack(RAX);
         pop_stack(RBX);
@@ -97,6 +103,14 @@ public:
             case TokenType::less_equal:
                 cmp(RAX, RBX);
                 set_less_equal();
+                push_stack(RAX);
+                break;
+            case TokenType::logical_and:
+                logical_and(RAX, RBX);
+                push_stack(RAX);
+                break;
+            case TokenType::logical_or:
+                logical_or(RAX, RBX);
                 push_stack(RAX);
                 break;
             default:
@@ -260,7 +274,7 @@ public:
                 }
             }
 
-            void operator()(const NodeStmtBreak*) const {
+            void operator()(const NodeStmtBreak* /*unused*/) const {
                 if (gen.loop_labels.empty()) {
                     cerr << "'przerwij' not inside any loop!" << endl;
                     exit(EXIT_FAILURE);
@@ -271,7 +285,7 @@ public:
                 gen.loop_labels.pop();
             }
 
-            void operator()(const NodeStmtContinue*) const {
+            void operator()(const NodeStmtContinue* /*unused*/) const {
                 if (gen.loop_labels.empty()) {
                     cerr << "'kontynuuj' not inside any loop!" << endl;
                     exit(EXIT_FAILURE);
@@ -363,6 +377,14 @@ private:
 
     void divide(const string&reg) {
         asm_out << "    div " << reg << endl;
+    }
+
+    void logical_and(const string&reg1, const string&reg2) {
+        asm_out << "    and " << reg1 << ", " << reg2 << endl;
+    }
+
+    void logical_or(const string&reg1, const string&reg2) {
+        asm_out << "    or " << reg1 << ", " << reg2 << endl;
     }
 
     void syscall() {

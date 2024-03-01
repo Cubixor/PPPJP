@@ -68,8 +68,10 @@ const inline set arithmetic_tokens = {
 };
 const inline set boolean_tokens = {
     TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
-    TokenType::less_equal
+    TokenType::less_equal, TokenType::logical_or, TokenType::logical_and
 };
+const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and};
+
 
 inline unordered_map<TokenType, string> token_names = {
     {TokenType::exit, "kończwaść (<expression>)"},
@@ -249,7 +251,7 @@ public:
     }
 
     const std::map<std::string, TokenType> tokenMap = {
-        {"kończwaśc", TokenType::exit},
+        {"kończwaść", TokenType::exit},
         {"zmienna", TokenType::var_decl},
         {"całkowita", TokenType::var_type_int},
         {"równa", TokenType::var_assign},
@@ -272,24 +274,14 @@ public:
         {"większe", TokenType::greater},
         {"mniejsze", TokenType::less},
         {"większerówne", TokenType::greater_equal},
-        {"mniejszerówne", TokenType::less_equal}
+        {"mniejszerówne", TokenType::less_equal},
+        {"oraz", TokenType::logical_and},
+        {"lub", TokenType::logical_or}
     };
 
     [[nodiscard]] Token create_token() const {
         if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
             return Token{it->second, {}};
-        }
-        if (buff == "większe") {
-            return Token{TokenType::greater, {}};
-        }
-        if (buff == "mniejsze") {
-            return Token{TokenType::less, {}};
-        }
-        if (buff == "większerówne") {
-            return Token{TokenType::greater_equal, {}};
-        }
-        if (buff == "mniejszerówne") {
-            return Token{TokenType::less_equal, {}};
         }
 
         if (num_values.contains(buff)) {
