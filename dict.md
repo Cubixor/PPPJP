@@ -55,23 +55,24 @@
     fałsz
 }
 <arithmetic_expr> → {
-    (1) <numerical_expr> modulo <numerical_expr>
-    (1) <numerical_expr> razy <numerical_expr>
-    (1) <numerical_expr> podzielić <numerical_expr>
-    (0) <numerical_expr> dodać <numerical_expr>
-    (0) <numerical_expr> odjąć <numerical_expr>
+    (5) <numerical_expr> modulo <numerical_expr>
+    (5) <numerical_expr> razy <numerical_expr>
+    (5) <numerical_expr> podzielić <numerical_expr>
+    (4) <numerical_expr> dodać <numerical_expr>
+    (4) <numerical_expr> odjąć <numerical_expr>
 }
 <boolean_math_expr> → {
-    <numerical_expr> równe <numerical_expr>
-    <numerical_expr> różne <numerical_expr>
-    <numerical_expr> większe od <numerical_expr>
-    <numerical_expr> większe równe <numerical_expr>
-    <numerical_expr> mniejsze <numerical_expr>
-    <numerical_expr> mniejsze równe <numerical_expr>
+    (3) <numerical_expr> równe <numerical_expr>
+    (3) <numerical_expr> różne <numerical_expr>
+    (3) <numerical_expr> większe od <numerical_expr>
+    (3) <numerical_expr> większe równe <numerical_expr>
+    (3) <numerical_expr> mniejsze <numerical_expr>
+    (3) <numerical_expr> mniejsze równe <numerical_expr>
 }
 <boolean_logic_expr> → {
-    <boolean_expr> oraz <boolean_expr>
-    <boolean_expr> lub <boolean_expr>
+    (2) nie <boolean_expr>
+    (1) <boolean_expr> oraz <boolean_expr>
+    (1) <boolean_expr> lub <boolean_expr>
 }
 ```
 

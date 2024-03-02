@@ -47,7 +47,8 @@ enum class TokenType {
     less_equal,
     logical_and,
     logical_or,
-    logical_not
+    logical_not,
+    minus,
 };
 
 struct Token {
@@ -68,9 +69,9 @@ const inline set arithmetic_tokens = {
 };
 const inline set boolean_tokens = {
     TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
-    TokenType::less_equal, TokenType::logical_or, TokenType::logical_and
+    TokenType::less_equal, TokenType::logical_or, TokenType::logical_and, TokenType::logical_not
 };
-const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and};
+const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and, TokenType::logical_not};
 
 
 inline unordered_map<TokenType, string> token_names = {
@@ -276,7 +277,9 @@ public:
         {"większerówne", TokenType::greater_equal},
         {"mniejszerówne", TokenType::less_equal},
         {"oraz", TokenType::logical_and},
-        {"lub", TokenType::logical_or}
+        {"lub", TokenType::logical_or},
+        {"nie", TokenType::logical_not},
+        {"minus", TokenType::minus}
     };
 
     [[nodiscard]] Token create_token() const {

@@ -38,8 +38,13 @@ struct NodeBinExpr {
     NodeExpr* right;
 };
 
+struct NodeUnExpr {
+    TokenType type;
+    NodeTerm* term;
+};
+
 struct NodeExpr {
-    variant<NodeTerm *, NodeBinExpr *> var;
+    variant<NodeTerm *, NodeBinExpr *, NodeUnExpr *> var;
 };
 
 struct NodeStmtExit {
@@ -113,6 +118,7 @@ public:
     }
 
     NodeTermIntLit* parse_number() {
+        bool minus = next_token({TokenType::minus}, false);
         next_token(int_tokens, true);
 
         int result = 0;
@@ -146,6 +152,10 @@ public:
         }
         while (next_token(int_tokens, false));
 
+        /*if (minus) {
+            result = -result;
+        }*/
+
         auto* int_lit = allocator.alloc<NodeTermIntLit>();
         const string&result_str = to_string(result);
         int_lit->value = result_str;
@@ -154,11 +164,25 @@ public:
     }
 
     [[nodiscard]] NodeExpr* parse_expr(const int min_prec = 0) {
-        next_token(term_tokens, true);
-
         auto* node_expr = allocator.alloc<NodeExpr>();
-        NodeTerm* node_term = parse_term();
-        node_expr->var = node_term;
+
+        if (next_token({TokenType::logical_not}, false)) {
+            auto* node_un_expr = allocator.alloc<NodeUnExpr>();
+            const TokenType opr = it->type;
+            node_un_expr->type = opr;
+
+            next_token(term_tokens, true);
+            NodeTerm* node_term = parse_term();
+            node_un_expr->term = node_term;
+
+            node_expr->var = node_un_expr;
+        }
+        else {
+            next_token(term_tokens, true);
+
+            NodeTerm* node_term = parse_term();
+            node_expr->var = node_term;
+        }
 
         while (true) {
             if (!next_token(arithmetic_tokens, false) && !next_token(boolean_tokens, false)) {

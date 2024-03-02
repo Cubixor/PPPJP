@@ -44,7 +44,7 @@ public:
         return TokenType::var_type_int;
     }
 
-    void generate_arithm_expr(const NodeBinExpr* expr, const TokenType expected_type) {
+    void generate_bin_expr(const NodeBinExpr* expr, const TokenType expected_type) {
         check_token(expr->type, expected_type);
 
         const TokenType expected_param_type = get_expr_type(expr->type);
@@ -118,17 +118,38 @@ public:
         }
     }
 
+    void generate_un_expr(const NodeUnExpr* un_expr, const TokenType expected_type) {
+        check_token(un_expr->type, expected_type);
+
+        const TokenType expected_param_type = get_expr_type(un_expr->type);
+        generate_term(un_expr->term, expected_param_type);
+
+        pop_stack(RAX);
+
+        switch (un_expr->type) {
+            case TokenType::logical_not:
+                logical_not(RAX);
+                push_stack(RAX);
+                break;
+            default: assert(false);
+        }
+    }
+
     void generate_expr(NodeExpr* expr, const TokenType expected_type) {
         struct ExprVisitor {
             Generator&gen;
             TokenType expected_type;
 
             void operator()(const NodeBinExpr* arith_expr) const {
-                gen.generate_arithm_expr(arith_expr, expected_type);
+                gen.generate_bin_expr(arith_expr, expected_type);
             }
 
             void operator()(NodeTerm* term) const {
                 gen.generate_term(term, expected_type);
+            }
+
+            void operator()(const NodeUnExpr* un_expr) const {
+                gen.generate_un_expr(un_expr, expected_type);
             }
         };
 
@@ -385,6 +406,10 @@ private:
 
     void logical_or(const string&reg1, const string&reg2) {
         asm_out << "    or " << reg1 << ", " << reg2 << endl;
+    }
+
+    void logical_not(const string&reg) {
+        asm_out << "    not " << reg << endl;
     }
 
     void syscall() {
