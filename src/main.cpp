@@ -31,7 +31,7 @@ void write_file(string filename, const string&contents) {
 
 int main(const int argc, char* argv[]) {
     if (argc != 2) {
-        std::cerr << "Wrong usage! Use pppjp <file.pppp>" << endl;
+        std::cerr << "[BŁĄD] Nieprawidłowe użycie! Wpisz: pppjp <plik.pppp>" << endl;
         return 1;
     }
 
@@ -46,11 +46,6 @@ int main(const int argc, char* argv[]) {
     Parser parser(tokens);
     const optional<NodeStart> tree = parser.parse_program();
 
-    if (!tree.has_value()) {
-        std::cerr << "No statements found!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
 
     //Generate code
     Generator generator((tree.value()));
@@ -61,7 +56,7 @@ int main(const int argc, char* argv[]) {
 
     system("nasm -felf64 test.asm && ld test.o -o test");
 
-    cout << "Successfully compiled the file!" << endl;
+    cout << "[Sukces] Pomyślnie skompilowano plik!" << endl;
 
 
     return 0;

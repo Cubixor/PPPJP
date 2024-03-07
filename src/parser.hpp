@@ -82,9 +82,11 @@ struct NodeStmtWhile {
 };
 
 struct NodeStmtBreak {
+    Token token;
 };
 
 struct NodeStmtContinue {
+    Token token;
 };
 
 struct NodeStmtAssign {
@@ -131,8 +133,7 @@ public:
                 const int new_multiplier = multipliers[it->value.value()];
 
                 if (new_multiplier <= multiplier) {
-                    cerr << "Invalid number" << endl;
-                    exit(EXIT_FAILURE);
+                    number_err();
                 }
 
                 multiplier = new_multiplier;
@@ -143,8 +144,7 @@ public:
             const int curr_result = multiplier * value;
 
             if (digit_count(prev_result) <= digit_count(curr_result)) {
-                cerr << "Invalid number" << endl;
-                exit(EXIT_FAILURE);
+                number_err();
             }
 
             prev_result = curr_result;
@@ -161,6 +161,11 @@ public:
         int_lit->value = result_str;
 
         return int_lit;
+    }
+
+    void number_err() const {
+        cerr << "[BŁĄD] [Analiza składniowa] Nieprawidłowa liczba \n\t w linijce " << it->line << endl;
+        exit(EXIT_FAILURE);
     }
 
     [[nodiscard]] NodeExpr* parse_expr(const int min_prec = 0) {
@@ -396,10 +401,14 @@ public:
             node_statement->var = stmt_while;
         }
         else if (it->type == TokenType::loop_break) {
-            node_statement->var = allocator.alloc<NodeStmtBreak>();
+            auto* stmt_break = allocator.alloc<NodeStmtBreak>();
+            stmt_break->token = *it;
+            node_statement->var = stmt_break;
         }
         else if (it->type == TokenType::loop_continue) {
-            node_statement->var = allocator.alloc<NodeStmtContinue>();
+            auto* stmt_continue = allocator.alloc<NodeStmtContinue>();
+            stmt_continue->token = *it;
+            node_statement->var = stmt_continue;
         }
         else if (it->type == TokenType::print) {
             next_token({TokenType::paren_open}, true);
@@ -413,7 +422,8 @@ public:
             node_statement->var = stmt_print;
         }
         else {
-            cerr << "Not a statement '" << token_names[it->type] << "'!" << endl;
+            cerr << "[BŁĄD] [Analiza składniowa] Oczekiwano <instrukcja>, znaleziono '" <<
+                    token_names[it->type] << "' \n\t w linijce: " << it->line << endl;
             exit(EXIT_FAILURE);
         }
 
@@ -441,14 +451,16 @@ private:
         if (next == tokens.end()) {
             if (!required) return false;
 
-            cerr << "Expected '" << get_token_names(expected) << "', found nothing" << endl;
+            cerr << "[BŁĄD] [Analiza składniowa] Oczekiwano '" << get_token_names(expected) <<
+                    "', nie znaleziono kolejnych tokenów \n\t w linijce: " << it->line << endl;
             exit(EXIT_FAILURE);
         }
 
         if (!expected.contains(next->type)) {
             if (!required) return false;
 
-            cerr << "Expected '" << get_token_names(expected) << "', found '" << token_names[next->type] << "'" << endl;
+            cerr << "[BŁĄD] [Analiza składniowa] Oczekiwano '" << get_token_names(expected) << "', znaleziono '" <<
+                    token_names[next->type] << "' \n\t w linijce: " << it->line << endl;
             exit(EXIT_FAILURE);
         }
 

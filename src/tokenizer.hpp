@@ -54,6 +54,7 @@ enum class TokenType {
 struct Token {
     TokenType type;
     optional<string> value;
+    int line;
 };
 
 const inline set stmt_tokens = {
@@ -75,23 +76,62 @@ const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and
 
 
 inline unordered_map<TokenType, string> token_names = {
-    {TokenType::exit, "kończwaść (<expression>)"},
-    {TokenType::int_lit_num, "[<integer_literal>]"},
-    {TokenType::int_lit_mul, ""},
+    {TokenType::exit, "kończwaść"},
+    {TokenType::int_lit_num, "<liczba>"},
+    {TokenType::int_lit_mul, "<liczba>"},
     {TokenType::paren_open, "("},
     {TokenType::paren_close, ")"},
-    {TokenType::sq_brkt_close, "]"},
     {TokenType::sq_brkt_open, "["},
+    {TokenType::sq_brkt_close, "]"},
+    {TokenType::cur_brkt_close, "}"},
+    {TokenType::cur_brkt_open, "{"},
+    {TokenType::backtick, "`"},
     {TokenType::var_decl, "zmienna"},
     {TokenType::var_type_int, "całkowita"},
     {TokenType::var_type_boolean, "logiczna"},
-    {TokenType::var_ident, "<variable_name>"},
-    {TokenType::backtick, "`"},
+    {TokenType::var_ident, "<zmienna>"},
     {TokenType::var_assign, "równa"},
-    {TokenType::backtick, "`"},
+    {TokenType::add, "dodać"},
+    {TokenType::multiply, "razy"},
+    {TokenType::substract, "odjąć"},
+    {TokenType::divide, "podzielić"},
+    {TokenType::modulo, "modulo"},
+    {TokenType::cond_if, "jeżeli"},
+    {TokenType::cond_else, "przeciwnie"},
+    {TokenType::colon, ":"},
+    {TokenType::loop, "powtarzaj"},
+    {TokenType::loop_break, "przerwij"},
+    {TokenType::loop_continue, "kontynuuj"},
+    {TokenType::print, "wyświetl"},
+    {TokenType::bool_true, "prawda"},
+    {TokenType::bool_false, "fałsz"},
+    {TokenType::equal, "równe"},
+    {TokenType::not_equal, "różne"},
+    {TokenType::greater, "większe"},
+    {TokenType::greater_equal, "większerówne"},
+    {TokenType::less, "mniejsze"},
+    {TokenType::less_equal, "mniejszerówne"},
+    {TokenType::logical_and, "oraz"},
+    {TokenType::logical_or, "lub"},
+    {TokenType::logical_not, "nie"},
+    {TokenType::minus, "minus"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
+    if (expected == stmt_tokens) {
+        return "<instrukcja>";
+    }
+    if (expected == term_tokens) {
+        return "<wyrażenie>";
+    }
+    if (expected == int_tokens) {
+        return "<liczba>";
+    }
+    if (expected == int_tokens) {
+        return "<liczba>";
+    }
+
+
     string result;
 
     for (TokenType type: expected) {
@@ -189,7 +229,16 @@ public:
         contents += " ";
         bool comment = false;
         for (int i = 0; i < contents.length(); i++) {
-            if ((contents[i] == '\n' && comment) || contents[i] == '#') {
+            if (contents[i] == '\n') {
+                line++;
+
+                if (comment) {
+                    comment = false;
+                    continue;
+                }
+            }
+
+            if (contents[i] == '#') {
                 comment = !comment;
                 continue;
             }
@@ -201,7 +250,7 @@ public:
             if (isspace(contents[i]) != 0) {
                 create_from_buff();
             }
-            else if (auto token = try_create_token(contents[i])) {
+            else if (auto token = create_char_token(contents[i])) {
                 create_from_buff();
 
                 tokens.push_back(token.value());
@@ -213,30 +262,9 @@ public:
         return tokens;
     }
 
-    [[nodiscard]] static optional<Token> try_create_token(const char c) {
-        if (c == '(') {
-            return Token{TokenType::paren_open, {}};
-        }
-        if (c == ')') {
-            return Token{TokenType::paren_close, {}};
-        }
-        if (c == '[') {
-            return Token{TokenType::sq_brkt_open, {}};
-        }
-        if (c == ']') {
-            return Token{TokenType::sq_brkt_close, {}};
-        }
-        if (c == '{') {
-            return Token{TokenType::cur_brkt_open, {}};
-        }
-        if (c == '}') {
-            return Token{TokenType::cur_brkt_close, {}};
-        }
-        if (c == '`') {
-            return Token{TokenType::backtick, {}};
-        }
-        if (c == ':') {
-            return Token{TokenType::colon, {}};
+    [[nodiscard]] optional<Token> create_char_token(const char c) const {
+        if (const auto it = charTokenMap.find(c); it != charTokenMap.end()) {
+            return Token{it->second, {}, line};
         }
 
         return {};
@@ -250,6 +278,17 @@ public:
         tokens.push_back(token);
         buff.clear();
     }
+
+    const std::map<char, TokenType> charTokenMap = {
+        {'(', TokenType::paren_open},
+        {')', TokenType::paren_close},
+        {'[', TokenType::sq_brkt_open},
+        {']', TokenType::sq_brkt_close},
+        {'{', TokenType::cur_brkt_open},
+        {'}', TokenType::cur_brkt_close},
+        {'`', TokenType::backtick},
+        {':', TokenType::colon},
+    };
 
     const std::map<std::string, TokenType> tokenMap = {
         {"kończwaść", TokenType::exit},
@@ -284,21 +323,22 @@ public:
 
     [[nodiscard]] Token create_token() const {
         if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
-            return Token{it->second, {}};
+            return Token{it->second, {}, line};
         }
 
         if (num_values.contains(buff)) {
-            return Token{TokenType::int_lit_num, buff};
+            return Token{TokenType::int_lit_num, buff, line};
         }
         if (multipliers.contains(buff)) {
-            return Token{TokenType::int_lit_mul, buff};
+            return Token{TokenType::int_lit_mul, buff, line};
         }
 
-        return Token{TokenType::var_ident, buff};
+        return Token{TokenType::var_ident, buff, line};
     }
 
 private:
     vector<Token> tokens;
     string buff;
     string contents;
+    int line = 1;
 };

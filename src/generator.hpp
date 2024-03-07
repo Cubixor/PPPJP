@@ -34,7 +34,8 @@ public:
         }
 
         if (!ok) {
-            cerr << "Type mismatch! Expected " + get_token_names({expected_type});
+            //TODO Add line numbers
+            cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({expected_type}) << "' \n\t w linijce X"<<endl;
             exit(EXIT_FAILURE);
         }
     }
@@ -177,7 +178,7 @@ public:
             void operator()(const NodeTermIdent* term_ident) const {
                 const string* ident = &term_ident->ident.value.value();
                 if (!gen.stack_vars.contains(*ident)) {
-                    cerr << "Undeclared identifier '" << *ident << "'!" << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << *ident << "' \n\t w linijce " << term_ident->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
                 auto&[location, type] = gen.stack_vars[*ident];
@@ -211,7 +212,7 @@ public:
             void operator()(const NodeStmtVariable* stmt_var) const {
                 const string* ident = &stmt_var->ident.value.value();
                 if (gen.stack_vars.contains(*ident)) {
-                    cerr << "Identifier already declared '" << *ident << "'!" << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Redeklaracja identyfikatora '" << *ident << "' \n\t w linijce " << stmt_var->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
 
@@ -260,7 +261,7 @@ public:
                 const string&ident = stmt_assign->ident.value.value();
 
                 if (!gen.stack_vars.contains(ident)) {
-                    cerr << "Identifier not declared '" << ident << "'!" << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << ident << "' \n\t w linijce " << stmt_assign->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
                 auto&[location, type] = gen.stack_vars[ident];
@@ -278,8 +279,8 @@ public:
 
                 gen.label(start_label);
 
-                if (auto* const expr = stmt_while->expr.value()) {
-                    gen.generate_expr(expr, TokenType::var_type_boolean);
+                if (stmt_while->expr.has_value()) {
+                    gen.generate_expr(stmt_while->expr.value(), TokenType::var_type_boolean);
                     gen.pop_stack(RAX);
                     gen.test(RAX);
                     gen.jump_zero(end_label);
@@ -295,9 +296,9 @@ public:
                 }
             }
 
-            void operator()(const NodeStmtBreak* /*unused*/) const {
+            void operator()(const NodeStmtBreak* stmt_break) const {
                 if (gen.loop_labels.empty()) {
-                    cerr << "'przerwij' not inside any loop!" << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'przerwij' poza zakresem pętli \n\t w linijce " << stmt_break->token.line << endl;
                     exit(EXIT_FAILURE);
                 }
 
@@ -306,9 +307,9 @@ public:
                 gen.loop_labels.pop();
             }
 
-            void operator()(const NodeStmtContinue* /*unused*/) const {
+            void operator()(const NodeStmtContinue* stmt_continue) const {
                 if (gen.loop_labels.empty()) {
-                    cerr << "'kontynuuj' not inside any loop!" << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'kontynuuj' poza zakresem pętli \n\t w linijce " << stmt_continue->token.line << endl;
                     exit(EXIT_FAILURE);
                 }
 
