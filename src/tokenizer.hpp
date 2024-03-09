@@ -37,8 +37,7 @@ enum class TokenType {
     loop_break,
     loop_continue,
     print,
-    bool_true,
-    bool_false,
+    bool_lit,
     equal,
     not_equal,
     greater,
@@ -63,7 +62,7 @@ const inline set stmt_tokens = {
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {
-    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_true, TokenType::bool_false
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit
 };
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
@@ -103,8 +102,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::loop_break, "przerwij"},
     {TokenType::loop_continue, "kontynuuj"},
     {TokenType::print, "wyświetl"},
-    {TokenType::bool_true, "prawda"},
-    {TokenType::bool_false, "fałsz"},
+    {TokenType::bool_lit, "<logiczna>"},
     {TokenType::equal, "równe"},
     {TokenType::not_equal, "różne"},
     {TokenType::greater, "większe"},
@@ -279,6 +277,34 @@ public:
         buff.clear();
     }
 
+    [[nodiscard]] Token create_token() const {
+        if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
+            return Token{it->second, {}, line};
+        }
+
+        if (buff == "prawda") {
+            return Token{TokenType::bool_lit, "1", line};
+        }
+        if (buff == "fałsz") {
+            return Token{TokenType::bool_lit, "0", line};
+        }
+
+        if (num_values.contains(buff)) {
+            return Token{TokenType::int_lit_num, buff, line};
+        }
+        if (multipliers.contains(buff)) {
+            return Token{TokenType::int_lit_mul, buff, line};
+        }
+
+        return Token{TokenType::var_ident, buff, line};
+    }
+
+private:
+    vector<Token> tokens;
+    string buff;
+    string contents;
+    int line = 1;
+
     const std::map<char, TokenType> charTokenMap = {
         {'(', TokenType::paren_open},
         {')', TokenType::paren_close},
@@ -307,8 +333,6 @@ public:
         {"kontynuuj", TokenType::loop_continue},
         {"wyświetl", TokenType::print},
         {"logiczna", TokenType::var_type_boolean},
-        {"prawda", TokenType::bool_true},
-        {"fałsz", TokenType::bool_false},
         {"równe", TokenType::equal},
         {"różne", TokenType::not_equal},
         {"większe", TokenType::greater},
@@ -320,25 +344,4 @@ public:
         {"nie", TokenType::logical_not},
         {"minus", TokenType::minus}
     };
-
-    [[nodiscard]] Token create_token() const {
-        if (const auto it = tokenMap.find(buff); it != tokenMap.end()) {
-            return Token{it->second, {}, line};
-        }
-
-        if (num_values.contains(buff)) {
-            return Token{TokenType::int_lit_num, buff, line};
-        }
-        if (multipliers.contains(buff)) {
-            return Token{TokenType::int_lit_mul, buff, line};
-        }
-
-        return Token{TokenType::var_ident, buff, line};
-    }
-
-private:
-    vector<Token> tokens;
-    string buff;
-    string contents;
-    int line = 1;
 };

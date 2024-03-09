@@ -19,43 +19,42 @@ public:
     explicit Generator(NodeStart root) : root(std::move(root)) {
     }
 
-    static void check_token(const TokenType result_type, const TokenType expected_type) {
-        if (result_type == expected_type) return;
-
-        bool ok;
-        switch (expected_type) {
-            case TokenType::var_type_int:
-                ok = arithmetic_tokens.contains(result_type);
-                break;
-            case TokenType::var_type_boolean:
-                ok = boolean_tokens.contains(result_type);
-                break;
-            default: ok = false;
-        }
-
-        if (!ok) {
-            //TODO Add line numbers
-            cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({expected_type}) << "' \n\t w linijce X"<<endl;
+    static void check_token(const TokenType result_type, const TokenType expected_type, const int line) {
+        if (result_type != expected_type) {
+            cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({
+                expected_type
+            }) << "' \n\t w linijce " << line << endl;
             exit(EXIT_FAILURE);
         }
     }
 
-    static TokenType get_expr_type(const TokenType opr) {
+    static void check_operator(const TokenType opr, const TokenType expected_type, const int line) {
+        const TokenType result_type = get_result_type(opr);
+        check_token(result_type, expected_type, line);
+    }
+
+    static TokenType get_result_type(const TokenType opr) {
+        if (arithmetic_tokens.contains(opr)) return TokenType::var_type_int;
+        if (boolean_tokens.contains(opr)) return TokenType::var_type_boolean;
+        assert(false);
+    }
+
+    static TokenType get_param_type(const TokenType opr) {
         if (logical_tokens.contains(opr)) return TokenType::var_type_boolean;
         return TokenType::var_type_int;
     }
 
     void generate_bin_expr(const NodeBinExpr* expr, const TokenType expected_type) {
-        check_token(expr->type, expected_type);
+        check_operator(expr->opr.type, expected_type, expr->opr.line);
 
-        const TokenType expected_param_type = get_expr_type(expr->type);
+        const TokenType expected_param_type = get_param_type(expr->opr.type);
         generate_expr(expr->right, expected_param_type);
         generate_expr(expr->left, expected_param_type);
 
         pop_stack(RAX);
         pop_stack(RBX);
 
-        switch (expr->type) {
+        switch (expr->opr.type) {
             case TokenType::add:
                 add(RAX, RBX);
                 push_stack(RAX);
@@ -120,14 +119,14 @@ public:
     }
 
     void generate_un_expr(const NodeUnExpr* un_expr, const TokenType expected_type) {
-        check_token(un_expr->type, expected_type);
+        check_operator(un_expr->opr.type, expected_type, un_expr->opr.line);
 
-        const TokenType expected_param_type = get_expr_type(un_expr->type);
+        const TokenType expected_param_type = get_param_type(un_expr->opr.type);
         generate_term(un_expr->term, expected_param_type);
 
         pop_stack(RAX);
 
-        switch (un_expr->type) {
+        switch (un_expr->opr.type) {
             case TokenType::logical_not:
                 logical_not(RAX);
                 push_stack(RAX);
@@ -164,25 +163,26 @@ public:
             TokenType expected_type;
 
             void operator()(const NodeTermIntLit* term_int_lit) const {
-                check_token(TokenType::var_type_int, expected_type);
-                gen.mov_reg(RAX, term_int_lit->value);
+                check_token(TokenType::var_type_int, expected_type, term_int_lit->int_lit.line);
+                gen.mov_reg(RAX, term_int_lit->int_lit.value.value());
                 gen.push_stack(RAX);
             }
 
-            void operator()(const NodeTermBoolLit* bool_lit) const {
-                check_token(TokenType::var_type_boolean, expected_type);
-                gen.mov_reg(RAX, bool_lit->value ? "1" : "0");
+            void operator()(const NodeTermBoolLit* term_bool_lit) const {
+                check_token(TokenType::var_type_boolean, expected_type, term_bool_lit->bool_lit.line);
+                gen.mov_reg(RAX, term_bool_lit->bool_lit.value.value());
                 gen.push_stack(RAX);
             }
 
             void operator()(const NodeTermIdent* term_ident) const {
                 const string* ident = &term_ident->ident.value.value();
                 if (!gen.stack_vars.contains(*ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << *ident << "' \n\t w linijce " << term_ident->ident.line << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << *ident << "' \n\t w linijce " <<
+                            term_ident->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
                 auto&[location, type] = gen.stack_vars[*ident];
-                check_token(type, expected_type);
+                check_token(type, expected_type, term_ident->ident.line);
 
                 const string qword_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
                 gen.push_stack(qword_offset);
@@ -212,7 +212,8 @@ public:
             void operator()(const NodeStmtVariable* stmt_var) const {
                 const string* ident = &stmt_var->ident.value.value();
                 if (gen.stack_vars.contains(*ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Redeklaracja identyfikatora '" << *ident << "' \n\t w linijce " << stmt_var->ident.line << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Redeklaracja identyfikatora '" << *ident <<
+                            "' \n\t w linijce " << stmt_var->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
 
@@ -261,7 +262,8 @@ public:
                 const string&ident = stmt_assign->ident.value.value();
 
                 if (!gen.stack_vars.contains(ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << ident << "' \n\t w linijce " << stmt_assign->ident.line << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << ident << "' \n\t w linijce " <<
+                            stmt_assign->ident.line << endl;
                     exit(EXIT_FAILURE);
                 }
                 auto&[location, type] = gen.stack_vars[ident];
@@ -298,7 +300,8 @@ public:
 
             void operator()(const NodeStmtBreak* stmt_break) const {
                 if (gen.loop_labels.empty()) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'przerwij' poza zakresem pętli \n\t w linijce " << stmt_break->token.line << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'przerwij' poza zakresem pętli \n\t w linijce " <<
+                            stmt_break->token.line << endl;
                     exit(EXIT_FAILURE);
                 }
 
@@ -309,7 +312,8 @@ public:
 
             void operator()(const NodeStmtContinue* stmt_continue) const {
                 if (gen.loop_labels.empty()) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'kontynuuj' poza zakresem pętli \n\t w linijce " << stmt_continue->token.line << endl;
+                    cerr << "[BŁĄD] [Analiza semantyczna] Instrukcja 'kontynuuj' poza zakresem pętli \n\t w linijce " <<
+                            stmt_continue->token.line << endl;
                     exit(EXIT_FAILURE);
                 }
 

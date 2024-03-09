@@ -13,11 +13,11 @@ struct NodeExpr;
 struct NodeStatement;
 
 struct NodeTermIntLit {
-    string value;
+    Token int_lit;
 };
 
 struct NodeTermBoolLit {
-    bool value;
+    Token bool_lit;
 };
 
 struct NodeTermIdent {
@@ -33,14 +33,14 @@ struct NodeTerm {
 };
 
 struct NodeBinExpr {
-    TokenType type;
-    NodeExpr* left;
-    NodeExpr* right;
+    Token opr;
+    NodeExpr* left{};
+    NodeExpr* right{};
 };
 
 struct NodeUnExpr {
-    TokenType type;
-    NodeTerm* term;
+    Token opr;
+    NodeTerm* term{};
 };
 
 struct NodeExpr {
@@ -156,11 +156,10 @@ public:
             result = -result;
         }*/
 
-        auto* int_lit = allocator.alloc<NodeTermIntLit>();
-        const string&result_str = to_string(result);
-        int_lit->value = result_str;
+        auto* term_int_lit = allocator.alloc<NodeTermIntLit>();
+        term_int_lit->int_lit = Token{TokenType::int_lit_num, to_string(result), it->line};
 
-        return int_lit;
+        return term_int_lit;
     }
 
     void number_err() const {
@@ -173,8 +172,7 @@ public:
 
         if (next_token({TokenType::logical_not}, false)) {
             auto* node_un_expr = allocator.alloc<NodeUnExpr>();
-            const TokenType opr = it->type;
-            node_un_expr->type = opr;
+            node_un_expr->opr = *it;
 
             next_token(term_tokens, true);
             NodeTerm* node_term = parse_term();
@@ -211,7 +209,7 @@ public:
 
             node_arith_expr->left = expr_lhs;
             node_arith_expr->right = expr_rhs;
-            node_arith_expr->type = opr;
+            node_arith_expr->opr = *it;
 
 
             node_expr->var = node_arith_expr;
@@ -252,12 +250,11 @@ public:
                 term->var = term_paren;
                 break;
             }
-            case TokenType::bool_true:
-            case TokenType::bool_false: {
-                auto* bool_lit = allocator.alloc<NodeTermBoolLit>();
-                bool_lit->value = it->type == TokenType::bool_true;
+            case TokenType::bool_lit: {
+                auto* term_bool_lit = allocator.alloc<NodeTermBoolLit>();
+                term_bool_lit->bool_lit = *it;
 
-                term->var = bool_lit;
+                term->var = term_bool_lit;
                 break;
             }
             default: assert(false); //Unreachable
