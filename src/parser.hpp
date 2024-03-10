@@ -192,8 +192,8 @@ public:
                 break;
             }
 
-            const TokenType opr = it->type;
-            const int prec = get_prec(opr);
+            const Token opr = *it;
+            const int prec = get_prec(opr.type);
 
             if (prec < min_prec) {
                 --it;
@@ -209,7 +209,7 @@ public:
 
             node_arith_expr->left = expr_lhs;
             node_arith_expr->right = expr_rhs;
-            node_arith_expr->opr = *it;
+            node_arith_expr->opr = opr;
 
 
             node_expr->var = node_arith_expr;

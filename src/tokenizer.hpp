@@ -10,6 +10,7 @@
 using namespace std;
 
 enum class TokenType {
+    null,
     exit,
     int_lit_num,
     int_lit_mul,
@@ -95,7 +96,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::substract, "odjąć"},
     {TokenType::divide, "podzielić"},
     {TokenType::modulo, "modulo"},
-    {TokenType::cond_if, "jeżeli"},
+    {TokenType::cond_if, "jeśli"},
     {TokenType::cond_else, "przeciwnie"},
     {TokenType::colon, ":"},
     {TokenType::loop, "powtarzaj"},

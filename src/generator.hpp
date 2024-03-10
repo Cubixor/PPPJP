@@ -20,7 +20,7 @@ public:
     }
 
     static void check_token(const TokenType result_type, const TokenType expected_type, const int line) {
-        if (result_type != expected_type) {
+        if (expected_type != TokenType::null && result_type != expected_type) {
             cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({
                 expected_type
             }) << "' \n\t w linijce " << line << endl;
@@ -40,6 +40,7 @@ public:
     }
 
     static TokenType get_param_type(const TokenType opr) {
+        if (opr == TokenType::equal || opr == TokenType::not_equal) return TokenType::null;
         if (logical_tokens.contains(opr)) return TokenType::var_type_boolean;
         return TokenType::var_type_int;
     }
