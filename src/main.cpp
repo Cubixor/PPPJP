@@ -21,8 +21,7 @@ string read_file(const string&filename) {
 }
 
 void write_file(string filename, const string&contents) {
-    const size_t extIndex = filename.find_last_of('.') + 1;
-    filename = filename.substr(0, extIndex) + "asm";
+    filename = filename + ".asm";
 
     ofstream asm_file(filename);
     asm_file << contents;
@@ -36,6 +35,8 @@ int main(const int argc, char* argv[]) {
     }
 
     const string content = read_file(argv[1]);
+    string filename = argv[1];
+    filename = filename.substr(0, filename.find_last_of('.'));
 
     //Tokenize
     Tokenizer tokenizer(content);
@@ -52,9 +53,10 @@ int main(const int argc, char* argv[]) {
     const string asm_code = generator.generate_program();
 
 
-    write_file(argv[1], asm_code);
+    write_file(filename, asm_code);
 
-    system("nasm -felf64 test.asm && ld test.o -o test");
+    string cmd = "nasm -felf64 " + filename + ".asm && ld " + filename + ".o -o "+ filename;
+    system(cmd.c_str());
 
     cout << "[Sukces] Pomyślnie skompilowano plik!" << endl;
 
