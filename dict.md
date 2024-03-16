@@ -6,6 +6,8 @@
     <function>
     <scope>
     zmienna <type> `ident` równa <expr> 
+    tablica <type> `ident` rozmiaru <numerical_expr>
+    tablica <type> `ident` równa <array_expr>
     `ident` równa <expr>
     jeśli ( <boolean_expr> ): <statement> 
         [przeciwnie jeśli ( <boolean_expr> ): <statement>] 
@@ -26,11 +28,15 @@
 }
 <type> → { 
     całkowita 
-    logiczna 
+    logiczna
+    znak
 }
 <expr> → {
     <numerical_expr>
     <boolean_expr>
+}
+<array_expr> → {
+    <expr>*
 }
 <numerical_expr> → {
     <int_term>

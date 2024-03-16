@@ -20,6 +20,10 @@ struct NodeTermBoolLit {
     Token bool_lit;
 };
 
+struct NodeTermCharLit {
+    Token char_lit;
+};
+
 struct NodeTermIdent {
     Token ident;
 };
@@ -29,7 +33,7 @@ struct NodeTermParen {
 };
 
 struct NodeTerm {
-    variant<NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
+    variant<NodeTermCharLit *, NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
 };
 
 struct NodeBinExpr {
@@ -94,13 +98,17 @@ struct NodeStmtAssign {
     NodeExpr* expr{};
 };
 
-struct NodeStmtPrint {
+struct NodeStmtPrintInt {
+    NodeExpr* expr;
+};
+
+struct NodeStmtPrintChar {
     NodeExpr* expr;
 };
 
 struct NodeStatement {
     variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *, NodeStmtWhile *,
-        NodeStmtBreak *, NodeStmtContinue *, NodeStmtPrint *> var;
+        NodeStmtBreak *, NodeStmtContinue *, NodeStmtPrintInt *, NodeStmtPrintChar *> var;
 };
 
 struct NodeStart {
@@ -257,6 +265,17 @@ public:
                 term->var = term_bool_lit;
                 break;
             }
+            case TokenType::single_quote: {
+                next_token({TokenType::character}, true);
+
+                auto* term_char_lit = allocator.alloc<NodeTermCharLit>();
+                term_char_lit->char_lit = *it;
+
+                next_token({TokenType::single_quote}, true);
+
+                term->var = term_char_lit;
+                break;
+            }
             default: assert(false); //Unreachable
         }
 
@@ -298,130 +317,153 @@ public:
     NodeStatement* parse_statement() {
         auto* node_statement = allocator.alloc<NodeStatement>();
 
-        if (it->type == TokenType::exit) {
-            next_token({TokenType::paren_open}, true);
-
-            NodeExpr* expr = parse_expr();
-
-            next_token({TokenType::paren_close}, true);
-
-            auto* node_stmt_exit = allocator.alloc<NodeStmtExit>();
-            node_stmt_exit->expr = expr;
-
-            node_statement->var = node_stmt_exit;
-        }
-        else if (it->type == TokenType::var_decl) {
-            next_token({TokenType::var_type_int, TokenType::var_type_boolean}, true);
-            const Token var_type = *it;
-
-            next_token({TokenType::backtick}, true);
-            next_token({TokenType::var_ident}, true);
-            const Token ident = *it;
-            next_token({TokenType::backtick}, true);
-
-            next_token({TokenType::var_assign}, true);
-
-            NodeExpr* expr = parse_expr();
-
-            auto* node_stmt_variable = allocator.alloc<NodeStmtVariable>();
-            node_stmt_variable->ident = ident;
-            node_stmt_variable->type = var_type.type;
-            node_stmt_variable->expr = expr;
-
-            node_statement->var = node_stmt_variable;
-        }
-        else if (it->type == TokenType::cur_brkt_open) {
-            NodeStmtScope* scope = parse_scope();
-
-            next_token({TokenType::cur_brkt_close}, true);
-
-            node_statement->var = scope;
-        }
-        else if (it->type == TokenType::cond_if) {
-            NodeIfPred* if_pred = parse_if();
-
-            auto* stmt_if = allocator.alloc<NodeStmtIf>();
-            stmt_if->pred = if_pred;
-
-            while (next_token({TokenType::cond_else}, false)) {
-                if (next_token({TokenType::cond_if}, false)) {
-                    NodeIfPred* elif_pred = parse_if();
-                    stmt_if->pred_elif.push_back(elif_pred);
-                }
-                else {
-                    next_token({TokenType::colon}, true);
-
-                    next_token(stmt_tokens, true);
-                    NodeStatement* else_stmt = parse_statement();
-
-                    auto* pred_else = allocator.alloc<NodeIfPredElse>();
-                    pred_else->stmt = else_stmt;
-
-                    stmt_if->pred_else = pred_else;
-                }
-            }
-
-            node_statement->var = stmt_if;
-        }
-        else if (it->type == TokenType::backtick) {
-            next_token({TokenType::var_ident}, true);
-            const Token ident = *it;
-
-            next_token({TokenType::backtick}, true);
-            next_token({TokenType::var_assign}, true);
-
-            NodeExpr* expr = parse_expr();
-
-            auto* stmt_assign = allocator.alloc<NodeStmtAssign>();
-            stmt_assign->ident = ident;
-            stmt_assign->expr = expr;
-
-            node_statement->var = stmt_assign;
-        }
-        else if (it->type == TokenType::loop) {
-            auto* stmt_while = allocator.alloc<NodeStmtWhile>();
-
-            if (next_token({TokenType::cond_if}, false)) {
+        switch (it->type) {
+            case TokenType::exit: {
                 next_token({TokenType::paren_open}, true);
 
                 NodeExpr* expr = parse_expr();
-                stmt_while->expr = expr;
 
                 next_token({TokenType::paren_close}, true);
+
+                auto* node_stmt_exit = allocator.alloc<NodeStmtExit>();
+                node_stmt_exit->expr = expr;
+
+                node_statement->var = node_stmt_exit;
+                break;
             }
-            next_token({TokenType::colon}, true);
+            case TokenType::var_decl: {
+                next_token(var_types, true);
+                const Token var_type = *it;
 
-            next_token(stmt_tokens, true);
-            NodeStatement* stmt = parse_statement();
-            stmt_while->stmt = stmt;
+                next_token({TokenType::backtick}, true);
+                next_token({TokenType::var_ident}, true);
+                const Token ident = *it;
+                next_token({TokenType::backtick}, true);
 
-            node_statement->var = stmt_while;
-        }
-        else if (it->type == TokenType::loop_break) {
-            auto* stmt_break = allocator.alloc<NodeStmtBreak>();
-            stmt_break->token = *it;
-            node_statement->var = stmt_break;
-        }
-        else if (it->type == TokenType::loop_continue) {
-            auto* stmt_continue = allocator.alloc<NodeStmtContinue>();
-            stmt_continue->token = *it;
-            node_statement->var = stmt_continue;
-        }
-        else if (it->type == TokenType::print) {
-            next_token({TokenType::paren_open}, true);
+                next_token({TokenType::var_assign}, true);
 
-            NodeExpr* expr = parse_expr();
-            auto* stmt_print = allocator.alloc<NodeStmtPrint>();
-            stmt_print->expr = expr;
+                NodeExpr* expr = parse_expr();
 
-            next_token({TokenType::paren_close}, true);
+                auto* node_stmt_variable = allocator.alloc<NodeStmtVariable>();
+                node_stmt_variable->ident = ident;
+                node_stmt_variable->type = var_type.type;
+                node_stmt_variable->expr = expr;
 
-            node_statement->var = stmt_print;
-        }
-        else {
-            cerr << "[BŁĄD] [Analiza składniowa] Oczekiwano <instrukcja>, znaleziono '" <<
-                    token_names[it->type] << "' \n\t w linijce: " << it->line << endl;
-            exit(EXIT_FAILURE);
+                node_statement->var = node_stmt_variable;
+                break;
+            }
+            case TokenType::cur_brkt_open: {
+                NodeStmtScope* scope = parse_scope();
+
+                next_token({TokenType::cur_brkt_close}, true);
+
+                node_statement->var = scope;
+                break;
+            }
+            case TokenType::cond_if: {
+                NodeIfPred* if_pred = parse_if();
+
+                auto* stmt_if = allocator.alloc<NodeStmtIf>();
+                stmt_if->pred = if_pred;
+
+                while (next_token({TokenType::cond_else}, false)) {
+                    if (next_token({TokenType::cond_if}, false)) {
+                        NodeIfPred* elif_pred = parse_if();
+                        stmt_if->pred_elif.push_back(elif_pred);
+                    }
+                    else {
+                        next_token({TokenType::colon}, true);
+
+                        next_token(stmt_tokens, true);
+                        NodeStatement* else_stmt = parse_statement();
+
+                        auto* pred_else = allocator.alloc<NodeIfPredElse>();
+                        pred_else->stmt = else_stmt;
+
+                        stmt_if->pred_else = pred_else;
+                    }
+                }
+
+                node_statement->var = stmt_if;
+                break;
+            }
+            case TokenType::backtick: {
+                next_token({TokenType::var_ident}, true);
+                const Token ident = *it;
+
+                next_token({TokenType::backtick}, true);
+                next_token({TokenType::var_assign}, true);
+
+                NodeExpr* expr = parse_expr();
+
+                auto* stmt_assign = allocator.alloc<NodeStmtAssign>();
+                stmt_assign->ident = ident;
+                stmt_assign->expr = expr;
+
+                node_statement->var = stmt_assign;
+                break;
+            }
+            case TokenType::loop: {
+                auto* stmt_while = allocator.alloc<NodeStmtWhile>();
+
+                if (next_token({TokenType::cond_if}, false)) {
+                    next_token({TokenType::paren_open}, true);
+
+                    NodeExpr* expr = parse_expr();
+                    stmt_while->expr = expr;
+
+                    next_token({TokenType::paren_close}, true);
+                }
+                next_token({TokenType::colon}, true);
+
+                next_token(stmt_tokens, true);
+                NodeStatement* stmt = parse_statement();
+                stmt_while->stmt = stmt;
+
+                node_statement->var = stmt_while;
+                break;
+            }
+            case TokenType::loop_break: {
+                auto* stmt_break = allocator.alloc<NodeStmtBreak>();
+                stmt_break->token = *it;
+                node_statement->var = stmt_break;
+                break;
+            }
+            case TokenType::loop_continue: {
+                auto* stmt_continue = allocator.alloc<NodeStmtContinue>();
+                stmt_continue->token = *it;
+                node_statement->var = stmt_continue;
+                break;
+            }
+            case TokenType::print_int: {
+                next_token({TokenType::paren_open}, true);
+
+                NodeExpr* expr = parse_expr();
+                auto* stmt_print = allocator.alloc<NodeStmtPrintInt>();
+                stmt_print->expr = expr;
+
+                next_token({TokenType::paren_close}, true);
+
+                node_statement->var = stmt_print;
+                break;
+            }
+            case TokenType::print_char: {
+                next_token({TokenType::paren_open}, true);
+
+                NodeExpr* expr = parse_expr();
+                auto* stmt_print = allocator.alloc<NodeStmtPrintChar>();
+                stmt_print->expr = expr;
+
+                next_token({TokenType::paren_close}, true);
+
+                node_statement->var = stmt_print;
+                break;
+            }
+            default: {
+                cerr << "[BŁĄD] [Analiza składniowa] Oczekiwano <instrukcja>, znaleziono '" <<
+                        token_names[it->type] << "' \n\t w linijce: " << it->line << endl;
+                exit(EXIT_FAILURE);
+            }
         }
 
         return node_statement;

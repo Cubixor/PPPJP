@@ -24,6 +24,7 @@ enum class TokenType {
     var_decl,
     var_type_int,
     var_type_boolean,
+    var_type_char,
     var_ident,
     var_assign,
     add,
@@ -37,7 +38,8 @@ enum class TokenType {
     loop,
     loop_break,
     loop_continue,
-    print,
+    print_int,
+    print_char,
     bool_lit,
     equal,
     not_equal,
@@ -49,6 +51,8 @@ enum class TokenType {
     logical_or,
     logical_not,
     minus,
+    single_quote,
+    character,
 };
 
 struct Token {
@@ -59,11 +63,11 @@ struct Token {
 
 const inline set stmt_tokens = {
     TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
-    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print
+    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print_int, TokenType::array
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {
-    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote
 };
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
@@ -73,6 +77,7 @@ const inline set boolean_tokens = {
     TokenType::less_equal, TokenType::logical_or, TokenType::logical_and, TokenType::logical_not
 };
 const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and, TokenType::logical_not};
+const inline set var_types = {TokenType::var_type_int, TokenType::var_type_boolean, TokenType::var_type_char};
 
 
 inline unordered_map<TokenType, string> token_names = {
@@ -89,6 +94,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::var_decl, "zmienna"},
     {TokenType::var_type_int, "całkowita"},
     {TokenType::var_type_boolean, "logiczna"},
+    {TokenType::var_type_char, "znak"},
     {TokenType::var_ident, "<zmienna>"},
     {TokenType::var_assign, "równa"},
     {TokenType::add, "dodać"},
@@ -102,7 +108,8 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::loop, "powtarzaj"},
     {TokenType::loop_break, "przerwij"},
     {TokenType::loop_continue, "kontynuuj"},
-    {TokenType::print, "wyświetl"},
+    {TokenType::print_int, "wyświetl_liczbe"},
+    {TokenType::print_char, "wyświetl_znak"},
     {TokenType::bool_lit, "<logiczna>"},
     {TokenType::equal, "równe"},
     {TokenType::not_equal, "różne"},
@@ -114,6 +121,8 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::logical_or, "lub"},
     {TokenType::logical_not, "nie"},
     {TokenType::minus, "minus"},
+    {TokenType::single_quote, "'"},
+    {TokenType::character, "<znak>"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
@@ -297,6 +306,13 @@ public:
             return Token{TokenType::int_lit_mul, buff, line};
         }
 
+        if (buff.length() == 1) {
+            return Token{TokenType::character, buff, line};
+        }
+        if (buff == "\\n") {
+            return Token{TokenType::character, "\n", line};
+        }
+
         return Token{TokenType::var_ident, buff, line};
     }
 
@@ -315,6 +331,7 @@ private:
         {'}', TokenType::cur_brkt_close},
         {'`', TokenType::backtick},
         {':', TokenType::colon},
+        {'\'', TokenType::single_quote},
     };
 
     const std::map<std::string, TokenType> tokenMap = {
@@ -332,8 +349,10 @@ private:
         {"powtarzaj", TokenType::loop},
         {"przerwij", TokenType::loop_break},
         {"kontynuuj", TokenType::loop_continue},
-        {"wyświetl", TokenType::print},
+        {"wyświetl_liczbe", TokenType::print_int},
+        {"wyświetl_znak", TokenType::print_char},
         {"logiczna", TokenType::var_type_boolean},
+        {"znak", TokenType::var_type_char},
         {"równe", TokenType::equal},
         {"różne", TokenType::not_equal},
         {"większe", TokenType::greater},
@@ -343,6 +362,6 @@ private:
         {"oraz", TokenType::logical_and},
         {"lub", TokenType::logical_or},
         {"nie", TokenType::logical_not},
-        {"minus", TokenType::minus}
+        {"minus", TokenType::minus},
     };
 };

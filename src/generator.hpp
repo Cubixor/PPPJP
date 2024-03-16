@@ -13,6 +13,7 @@ const string RAX = "rax";
 const string RBX = "rbx";
 const string RDX = "rdx";
 const string RDI = "rdi";
+const string RSI = "rsi";
 
 class Generator {
 public:
@@ -175,6 +176,14 @@ public:
                 gen.push_stack(RAX);
             }
 
+            void operator()(const NodeTermCharLit* term_char_lit) const {
+                check_token(TokenType::var_type_char, expected_type, term_char_lit->char_lit.line);
+
+                const int c = static_cast<unsigned char>(term_char_lit->char_lit.value.value()[0]);
+                gen.mov_reg(RAX, to_string(c));
+                gen.push_stack(RAX);
+            }
+
             void operator()(const NodeTermIdent* term_ident) const {
                 const string* ident = &term_ident->ident.value.value();
                 if (!gen.stack_vars.contains(*ident)) {
@@ -322,10 +331,16 @@ public:
                 gen.jump(label);
             }
 
-            void operator()(const NodeStmtPrint* stmt_print) const {
+            void operator()(const NodeStmtPrintInt* stmt_print) const {
                 gen.generate_expr(stmt_print->expr, TokenType::var_type_int);
                 gen.pop_stack(RAX);
                 gen.print_int();
+            }
+
+            void operator()(const NodeStmtPrintChar* stmt_print) const {
+                gen.generate_expr(stmt_print->expr, TokenType::var_type_char);
+                gen.print_char();
+                gen.pop_stack(RAX);
             }
         };
         StatementVisitor visitor{*this};
@@ -486,6 +501,10 @@ private:
 
     void print_int() {
         asm_out << "    call _print_int" << endl;
+    }
+
+    void print_char() {
+        asm_out << "    mov rax, 1\n    mov rdi, 1\n    mov rdx, 1\n    lea rsi, [rsp]\n    syscall" << endl;
     }
 
     string get_new_label() {
