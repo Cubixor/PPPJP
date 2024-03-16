@@ -11,6 +11,7 @@ using namespace std;
 
 const string RAX = "rax";
 const string RBX = "rbx";
+const string RCX = "rcx";
 const string RDX = "rdx";
 const string RDI = "rdi";
 const string RSI = "rsi";
@@ -186,13 +187,10 @@ public:
 
             void operator()(const NodeTermIdent* term_ident) const {
                 const string* ident = &term_ident->ident.value.value();
-                if (!gen.stack_vars.contains(*ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << *ident << "' \n\t w linijce " <<
-                            term_ident->ident.line << endl;
-                    exit(EXIT_FAILURE);
-                }
-                auto&[location, type] = gen.stack_vars[*ident];
-                check_token(type, expected_type, term_ident->ident.line);
+                gen.check_ident(term_ident->ident, true);
+
+                const Var var = gen.stack_vars[*ident];
+                check_token(var.type, expected_type, term_ident->ident.line);
 
                 const string qword_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
                 gen.push_stack(qword_offset);
@@ -200,6 +198,28 @@ public:
 
             void operator()(const NodeTermParen* term_paren) const {
                 gen.generate_expr(term_paren->expr, expected_type);
+            }
+
+            void operator()(const NodeTermArrIdent* arr_ident) const {
+                const string* ident = &arr_ident->ident.value.value();
+                gen.check_ident(arr_ident->ident, true);
+
+                const Var var = gen.stack_vars[*ident];
+                check_token(var.type, expected_type, arr_ident->ident.line);
+
+                gen.generate_expr(arr_ident->index, TokenType::var_type_int);
+
+                const string qword_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
+                gen.mov_reg(RBX, qword_offset);
+
+                gen.pop_stack(RAX);
+                gen.mov_reg(RCX, "8");
+                gen.multiply(RCX);
+                gen.add(RAX, RBX);
+
+                gen.mov_reg(RBX, "qword [rax]");
+                gen.push_stack(RBX);
+
             }
         };
         TermVisitor visitor{*this, expected_type};
@@ -215,17 +235,32 @@ public:
         jump(end_label);
     }
 
+    void check_ident(const Token&ident, const bool should_exist) const {
+        const string&ident_str = ident.value.value();
+
+        if (stack_vars.contains(ident_str)) {
+            if (!should_exist) {
+                cerr << "[BŁĄD] [Analiza semantyczna] Redeklaracja identyfikatora '" << ident_str <<
+                        "' \n\t w linijce " << ident.line << endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+        else {
+            if (should_exist) {
+                cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << ident_str << "' \n\t w linijce " <<
+                        ident.line << endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
     void generate_statement(NodeStatement* stmt) {
         struct StatementVisitor {
             Generator&gen;
 
             void operator()(const NodeStmtVariable* stmt_var) const {
                 const string* ident = &stmt_var->ident.value.value();
-                if (gen.stack_vars.contains(*ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Redeklaracja identyfikatora '" << *ident <<
-                            "' \n\t w linijce " << stmt_var->ident.line << endl;
-                    exit(EXIT_FAILURE);
-                }
+                gen.check_ident(stmt_var->ident, false);
 
                 gen.stack_vars.insert({*ident, Var{gen.stack_size, stmt_var->type}});
                 gen.generate_expr(stmt_var->expr, stmt_var->type);
@@ -269,18 +304,14 @@ public:
             }
 
             void operator()(const NodeStmtAssign* stmt_assign) const {
-                const string&ident = stmt_assign->ident.value.value();
+                const string* ident = &stmt_assign->ident.value.value();
+                gen.check_ident(stmt_assign->ident, true);
 
-                if (!gen.stack_vars.contains(ident)) {
-                    cerr << "[BŁĄD] [Analiza semantyczna] Nieznany identyfikator '" << ident << "' \n\t w linijce " <<
-                            stmt_assign->ident.line << endl;
-                    exit(EXIT_FAILURE);
-                }
-                auto&[location, type] = gen.stack_vars[ident];
+                Var var = gen.stack_vars[*ident];
 
-                gen.generate_expr(stmt_assign->expr, type);
+                gen.generate_expr(stmt_assign->expr, var.type);
                 gen.pop_stack(RAX);
-                gen.mov_reg("[rsp + " + gen.get_variable_offset(ident) + "]", RAX);
+                gen.mov_reg("[rsp + " + gen.get_variable_offset(*ident) + "]", RAX);
             }
 
             void operator()(const NodeStmtWhile* stmt_while) const {
@@ -342,6 +373,47 @@ public:
                 gen.print_char();
                 gen.pop_stack(RAX);
             }
+
+            void operator()(const NodeStmtArray* stmt_array) const {
+                const string* ident = &stmt_array->ident.value.value();
+                gen.check_ident(stmt_array->ident, false);
+
+                gen.generate_expr(stmt_array->size, TokenType::var_type_int);
+
+                const string qword_offset = "QWORD [rsp + " + gen.get_location_offset(gen.heap_pointers.top()) + "]";
+                gen.mov_reg(RDI, qword_offset);
+
+                gen.pop_stack(RBX);
+                gen.add(RDI, RBX);
+                gen.alloc_mem();
+
+                gen.heap_pointers.push(gen.stack_size);
+                gen.stack_vars.insert({*ident, Var{gen.stack_size, stmt_array->type}});
+
+                gen.push_stack(RAX);
+            }
+
+            void operator()(const NodeStmtArrAssign* stmt_arr_assign) const {
+                const string* ident = &stmt_arr_assign->ident.value.value();
+                gen.check_ident(stmt_arr_assign->ident, true);
+
+                Var var = gen.stack_vars[*ident];
+
+                gen.generate_expr(stmt_arr_assign->expr, var.type);
+                gen.generate_expr(stmt_arr_assign->index, TokenType::var_type_int);
+
+                const string pointer_offset = "QWORD [rsp + " + gen.get_variable_offset(*ident) + "]";
+                gen.mov_reg(RBX, pointer_offset);
+
+                gen.pop_stack(RAX);
+                gen.mov_reg(RCX, "8");
+                gen.multiply(RCX);
+                gen.add(RAX, RBX);
+
+                gen.pop_stack(RBX);
+
+                gen.mov_reg("qword [rax]", RBX);
+            }
         };
         StatementVisitor visitor{*this};
         visit(visitor, stmt->var);
@@ -351,6 +423,10 @@ public:
         asm_out << "%include \"printer.asm\"" << endl;
         asm_out << "global _start" << endl;
         asm_out << "_start:" << endl;
+
+        init_mem();
+        heap_pointers.push(stack_size);
+        push_stack(RAX);
 
         bool contains_exit = false;
         for (NodeStatement* stmt: root.statements) {
@@ -382,12 +458,18 @@ private:
     size_t stack_size = 0;
     map<string, Var> stack_vars;
 
+    stack<size_t> heap_pointers;
+
     vector<size_t> scopes;
     int label_count = 0;
     stack<pair<string, string>> loop_labels;
 
     string get_variable_offset(const string&ident) const {
         const size_t stack_loc = stack_vars.at(ident).location;
+        return get_location_offset(stack_loc);
+    }
+
+    string get_location_offset(const size_t stack_loc) const {
         return to_string((stack_size - stack_loc - 1) * 8);
     }
 
@@ -505,6 +587,14 @@ private:
 
     void print_char() {
         asm_out << "    mov rax, 1\n    mov rdi, 1\n    mov rdx, 1\n    lea rsi, [rsp]\n    syscall" << endl;
+    }
+
+    void init_mem() {
+        asm_out << "    mov rax, 12\n    mov rdi, 0\n    syscall\n";
+    }
+
+    void alloc_mem() {
+        asm_out << "    mov rax, 12\n    syscall\n";
     }
 
     string get_new_label() {

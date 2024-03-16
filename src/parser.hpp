@@ -32,8 +32,14 @@ struct NodeTermParen {
     NodeExpr* expr;
 };
 
+struct NodeTermArrIdent {
+    Token ident;
+    NodeExpr* index{};
+};
+
 struct NodeTerm {
-    variant<NodeTermCharLit *, NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *> var;
+    variant<NodeTermCharLit *, NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *, NodeTermArrIdent
+        *> var;
 };
 
 struct NodeBinExpr {
@@ -59,6 +65,17 @@ struct NodeStmtVariable {
     Token ident;
     TokenType type{};
     NodeExpr* expr{};
+};
+
+struct NodeArrayExpr {
+    vector<NodeExpr> exprs;
+};
+
+struct NodeStmtArray {
+    Token ident;
+    TokenType type{};
+    NodeExpr* size{};
+    NodeArrayExpr* expr{};
 };
 
 struct NodeStmtScope {
@@ -98,6 +115,12 @@ struct NodeStmtAssign {
     NodeExpr* expr{};
 };
 
+struct NodeStmtArrAssign {
+    Token ident;
+    NodeExpr* index{};
+    NodeExpr* expr{};
+};
+
 struct NodeStmtPrintInt {
     NodeExpr* expr;
 };
@@ -108,7 +131,8 @@ struct NodeStmtPrintChar {
 
 struct NodeStatement {
     variant<NodeStmtExit *, NodeStmtVariable *, NodeStmtScope *, NodeStmtIf *, NodeStmtAssign *, NodeStmtWhile *,
-        NodeStmtBreak *, NodeStmtContinue *, NodeStmtPrintInt *, NodeStmtPrintChar *> var;
+        NodeStmtBreak *, NodeStmtContinue *, NodeStmtPrintInt *, NodeStmtPrintChar *, NodeStmtArray *, NodeStmtArrAssign
+        *> var;
 };
 
 struct NodeStart {
@@ -240,12 +264,22 @@ public:
             }
             case TokenType::backtick: {
                 next_token({TokenType::var_ident}, true);
-
-                auto* term_ident = allocator.alloc<NodeTermIdent>();
-                term_ident->ident = *it;
-                term->var = term_ident;
-
+                const Token ident = *it;
                 next_token({TokenType::backtick}, true);
+
+                if (next_token({TokenType::element}, false)) {
+                    NodeExpr* index = parse_expr();
+                    auto* term_arr_ident = allocator.alloc<NodeTermArrIdent>();
+                    term_arr_ident->ident = ident;
+                    term_arr_ident->index = index;
+                    term->var = term_arr_ident;
+                }
+                else {
+                    auto* term_ident = allocator.alloc<NodeTermIdent>();
+                    term_ident->ident = ident;
+                    term->var = term_ident;
+                }
+
                 break;
             }
             case TokenType::paren_open: {
@@ -392,15 +426,30 @@ public:
                 const Token ident = *it;
 
                 next_token({TokenType::backtick}, true);
-                next_token({TokenType::var_assign}, true);
+                next_token({TokenType::var_assign, TokenType::element}, true);
 
-                NodeExpr* expr = parse_expr();
+                if (it->type == TokenType::var_assign) {
+                    NodeExpr* expr = parse_expr();
 
-                auto* stmt_assign = allocator.alloc<NodeStmtAssign>();
-                stmt_assign->ident = ident;
-                stmt_assign->expr = expr;
+                    auto* stmt_assign = allocator.alloc<NodeStmtAssign>();
+                    stmt_assign->ident = ident;
+                    stmt_assign->expr = expr;
 
-                node_statement->var = stmt_assign;
+                    node_statement->var = stmt_assign;
+                }
+                else {
+                    NodeExpr* index = parse_expr();
+                    next_token({TokenType::var_assign}, true);
+
+                    NodeExpr* value = parse_expr();
+
+                    auto* stmt_arr_assign = allocator.alloc<NodeStmtArrAssign>();
+                    stmt_arr_assign->ident = ident;
+                    stmt_arr_assign->index = index;
+                    stmt_arr_assign->expr = value;
+
+                    node_statement->var = stmt_arr_assign;
+                }
                 break;
             }
             case TokenType::loop: {
@@ -457,6 +506,34 @@ public:
                 next_token({TokenType::paren_close}, true);
 
                 node_statement->var = stmt_print;
+                break;
+            }
+            case TokenType::array: {
+                next_token(var_types, true);
+                const Token var_type = *it;
+
+                next_token({TokenType::backtick}, true);
+                next_token({TokenType::var_ident}, true);
+                const Token ident = *it;
+                next_token({TokenType::backtick}, true);
+
+                next_token({TokenType::var_assign, TokenType::ofsize}, true);
+
+                auto* node_stmt_arr = allocator.alloc<NodeStmtArray>();
+                node_stmt_arr->ident = ident;
+                node_stmt_arr->type = var_type.type;
+
+                if (it->type == TokenType::ofsize) {
+                    NodeExpr* expr = parse_expr();
+                    node_stmt_arr->size = expr;
+                }
+                else {
+                    /*NodeArrayExpr* array_expr = parse_arr_expr();
+                    node_stmt_arr->expr = array_expr;*/
+                }
+
+
+                node_statement->var = node_stmt_arr;
                 break;
             }
             default: {

@@ -53,6 +53,9 @@ enum class TokenType {
     minus,
     single_quote,
     character,
+    array,
+    ofsize,
+    element,
 };
 
 struct Token {
@@ -123,6 +126,9 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::minus, "minus"},
     {TokenType::single_quote, "'"},
     {TokenType::character, "<znak>"},
+    {TokenType::array, "tablica"},
+    {TokenType::ofsize, "rozmiaru"},
+    {TokenType::element, "element"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
@@ -363,5 +369,8 @@ private:
         {"lub", TokenType::logical_or},
         {"nie", TokenType::logical_not},
         {"minus", TokenType::minus},
+        {"tablica", TokenType::array},
+        {"rozmiaru", TokenType::ofsize},
+        {"element", TokenType::element}
     };
 };

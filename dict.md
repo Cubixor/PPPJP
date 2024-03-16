@@ -9,6 +9,7 @@
     tablica <type> `ident` rozmiaru <numerical_expr>
     tablica <type> `ident` równa <array_expr>
     `ident` równa <expr>
+    `ident` element <expr> równa <expr>
     jeśli ( <boolean_expr> ): <statement> 
         [przeciwnie jeśli ( <boolean_expr> ): <statement>] 
         [przeciwnie: <statement>]
