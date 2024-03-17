@@ -68,14 +68,15 @@ struct NodeStmtVariable {
 };
 
 struct NodeArrayExpr {
-    vector<NodeExpr> exprs;
+    Token token;
+    vector<NodeExpr *> exprs;
 };
 
 struct NodeStmtArray {
     Token ident;
     TokenType type{};
     NodeExpr* size{};
-    NodeArrayExpr* expr{};
+    optional<NodeArrayExpr*> contents;
 };
 
 struct NodeStmtScope {
@@ -317,6 +318,24 @@ public:
         return term;
     }
 
+    NodeArrayExpr* parse_array_expr() {
+        next_token({TokenType::cur_brkt_open}, true);
+
+        auto* array_expr = allocator.alloc<NodeArrayExpr>();
+        array_expr->token = *it;
+
+        do {
+            NodeExpr* expr = parse_expr();
+            array_expr->exprs.push_back(expr);
+        }
+        while (next_token({TokenType::comma}, false));
+
+
+        next_token({TokenType::cur_brkt_close}, false);
+
+        return array_expr;
+    }
+
     NodeStmtScope* parse_scope() {
         auto* scope = allocator.alloc<NodeStmtScope>();
 
@@ -528,8 +547,17 @@ public:
                     node_stmt_arr->size = expr;
                 }
                 else {
-                    /*NodeArrayExpr* array_expr = parse_arr_expr();
-                    node_stmt_arr->expr = array_expr;*/
+                    auto* array_expr = parse_array_expr();
+
+                    auto* size_expr = allocator.alloc<NodeExpr>();
+                    auto* size_term = allocator.alloc<NodeTerm>();
+                    auto* size_int_lit = allocator.alloc<NodeTermIntLit>();
+                    size_int_lit->int_lit = Token{TokenType::int_lit_num, to_string(array_expr->exprs.size())};
+                    size_term->var = size_int_lit;
+                    size_expr->var = size_term;
+
+                    node_stmt_arr->size = size_expr;
+                    node_stmt_arr->contents = array_expr;
                 }
 
 

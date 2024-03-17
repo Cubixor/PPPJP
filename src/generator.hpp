@@ -47,6 +47,11 @@ public:
         return TokenType::var_type_int;
     }
 
+    struct Var {
+        size_t location;
+        TokenType type;
+    };
+
     void generate_bin_expr(const NodeBinExpr* expr, const TokenType expected_type) {
         check_operator(expr->opr.type, expected_type, expr->opr.line);
 
@@ -254,6 +259,21 @@ public:
         }
     }
 
+    void generate_array_expr(const NodeArrayExpr* arr_expr, const Var&var) {
+
+
+        for (int index =0;index<arr_expr->exprs.size(); index++) {
+            generate_expr(arr_expr->exprs.at(index), var.type);
+
+            const string pointer_offset = "QWORD [rsp + " + get_location_offset(var.location) + "]";
+            mov_reg(RAX, pointer_offset);
+            mov_reg(RBX, to_string(8*index));
+            add(RAX, RBX);
+            pop_stack(RBX);
+            mov_reg("qword [rax]", RBX);
+        }
+    }
+
     void generate_statement(NodeStatement* stmt) {
         struct StatementVisitor {
             Generator&gen;
@@ -383,14 +403,24 @@ public:
                 const string qword_offset = "QWORD [rsp + " + gen.get_location_offset(gen.heap_pointers.top()) + "]";
                 gen.mov_reg(RDI, qword_offset);
 
-                gen.pop_stack(RBX);
+                gen.pop_stack(RAX);
+                gen.mov_reg(RBX, "8");
+                gen.multiply(RBX);
                 gen.add(RDI, RBX);
                 gen.alloc_mem();
 
                 gen.heap_pointers.push(gen.stack_size);
-                gen.stack_vars.insert({*ident, Var{gen.stack_size, stmt_array->type}});
+                auto var  = Var{gen.stack_size, stmt_array->type};
+                gen.stack_vars.insert({*ident, var});
 
                 gen.push_stack(RAX);
+
+
+                if (stmt_array->contents.has_value()) {
+                    const NodeArrayExpr* array_expr = stmt_array->contents.value();
+
+                    gen.generate_array_expr(array_expr, var);
+                }
             }
 
             void operator()(const NodeStmtArrAssign* stmt_arr_assign) const {
@@ -445,11 +475,6 @@ public:
 
         return asm_out.str();
     }
-
-    struct Var {
-        size_t location;
-        TokenType type;
-    };
 
 private:
     NodeStart root;

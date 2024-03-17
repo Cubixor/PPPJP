@@ -56,6 +56,7 @@ enum class TokenType {
     array,
     ofsize,
     element,
+    comma,
 };
 
 struct Token {
@@ -111,7 +112,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::loop, "powtarzaj"},
     {TokenType::loop_break, "przerwij"},
     {TokenType::loop_continue, "kontynuuj"},
-    {TokenType::print_int, "wyświetl_liczbe"},
+    {TokenType::print_int, "wyświetl_liczbę"},
     {TokenType::print_char, "wyświetl_znak"},
     {TokenType::bool_lit, "<logiczna>"},
     {TokenType::equal, "równe"},
@@ -129,6 +130,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::array, "tablica"},
     {TokenType::ofsize, "rozmiaru"},
     {TokenType::element, "element"},
+    {TokenType::comma, ","},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
@@ -338,6 +340,7 @@ private:
         {'`', TokenType::backtick},
         {':', TokenType::colon},
         {'\'', TokenType::single_quote},
+        {',', TokenType::comma},
     };
 
     const std::map<std::string, TokenType> tokenMap = {
@@ -355,7 +358,7 @@ private:
         {"powtarzaj", TokenType::loop},
         {"przerwij", TokenType::loop_break},
         {"kontynuuj", TokenType::loop_continue},
-        {"wyświetl_liczbe", TokenType::print_int},
+        {"wyświetl_liczbę", TokenType::print_int},
         {"wyświetl_znak", TokenType::print_char},
         {"logiczna", TokenType::var_type_boolean},
         {"znak", TokenType::var_type_char},
