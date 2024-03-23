@@ -156,14 +156,22 @@ public:
         bool minus = next_token({TokenType::minus}, false);
         next_token(int_tokens, true);
 
+        stack<Token*> num_tokens;
+        num_tokens.push(&*it);
+        while (next_token(int_tokens, false)) {
+            num_tokens.push(&*it);
+        }
+
         int result = 0;
 
         int multiplier = 1;
-        int prev_result = INT_MAX;
+        int prev_result = INT_MIN;
 
-        do {
-            if (it->type == TokenType::int_lit_mul) {
-                const int new_multiplier = multipliers[it->value.value()];
+        for(;!num_tokens.empty(); num_tokens.pop()){
+            const Token* curr = num_tokens.top();
+
+            if (curr->type == TokenType::int_lit_mul) {
+                const int new_multiplier = multipliers[curr->value.value()];
 
                 if (new_multiplier <= multiplier) {
                     number_err();
@@ -173,17 +181,16 @@ public:
                 continue;
             }
 
-            const int value = num_values[it->value.value()];
+            const int value = num_values[curr->value.value()];
             const int curr_result = multiplier * value;
 
-            if (digit_count(prev_result) <= digit_count(curr_result)) {
+            if (digit_count(prev_result) >= digit_count(curr_result)) {
                 number_err();
             }
 
             prev_result = curr_result;
             result += prev_result;
         }
-        while (next_token(int_tokens, false));
 
         /*if (minus) {
             result = -result;
