@@ -1,3 +1,6 @@
+section .data
+    minus db 45
+
 section .bss
     digitSpace resb 22     ; reserve space for a number
     digitSpacePos resb 8    ; reserver space for a pointer
@@ -6,6 +9,25 @@ section .text
     global _print_int
 
 _print_int:
+    push rax
+
+    test rax, rax
+    js _print_minus
+
+    pop rax
+    jmp _print_int_positive
+
+_print_minus:
+    mov rax, 1                  ; print incruction
+    mov rdi, 1                  ; |
+    mov rsi, minus               ; value to print
+    mov rdx, 1                  ; len
+    syscall
+
+    pop rax
+    neg rax
+
+_print_int_positive:
     mov rcx, digitSpace         ; move a pointer pointing to the memory space reserved for a number to rcx
     mov rbx, 10                 ; move a newline character to rbx
     mov [rcx], rbx              ; move a newline character to the number memory space

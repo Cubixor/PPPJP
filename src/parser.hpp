@@ -158,7 +158,7 @@ public:
     }
 
     NodeTermIntLit* parse_number() {
-        bool minus = next_token({TokenType::minus}, false);
+        const bool minus = next_token({TokenType::minus}, false);
         next_token(int_tokens, true);
 
         stack<Token*> num_tokens;
@@ -197,9 +197,9 @@ public:
             result += prev_result;
         }
 
-        /*if (minus) {
+        if (minus) {
             result = -result;
-        }*/
+        }
 
         auto* term_int_lit = allocator.alloc<NodeTermIntLit>();
         term_int_lit->int_lit = Token{TokenType::int_lit_num, to_string(result), it->line};

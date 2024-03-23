@@ -9,3 +9,7 @@ add_executable(PPPJP src/main.cpp
         src/generator.hpp
         src/arena_allocator.hpp
 )
+
+configure_file(printer.asm printer.asm COPYONLY)
+
+add_subdirectory(tests)
