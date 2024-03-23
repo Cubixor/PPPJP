@@ -60,6 +60,7 @@ enum class TokenType {
     comma,
     double_quote,
     string_lit,
+    read_char
 };
 
 struct Token {
@@ -74,7 +75,7 @@ const inline set stmt_tokens = {
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {
-    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote, TokenType::string_lit
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote, TokenType::string_lit, TokenType::read_char
 };
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
@@ -139,6 +140,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::element, "element"},
     {TokenType::comma, ","},
     {TokenType::string_lit, "<tekst>"},
+    {TokenType::read_char, "wczytaj_znak"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
@@ -397,6 +399,7 @@ private:
         {"minus", TokenType::minus},
         {"tablica", TokenType::array},
         {"rozmiaru", TokenType::ofsize},
-        {"element", TokenType::element}
+        {"element", TokenType::element},
+        {"wczytaj_znak", TokenType::read_char},
     };
 };

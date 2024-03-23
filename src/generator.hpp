@@ -243,6 +243,12 @@ public:
                 //TODO
                 //gen.generate_array_expr(array_expr, *var);
             }
+
+            void operator()(const NodeTermReadChar* read_char) const {
+                check_token(TokenType::var_type_char, expected_type, read_char->token.line);
+
+                gen.read_char();
+            }
         };
         TermVisitor visitor{*this, expected_type};
         visit(visitor, term->var);
@@ -513,6 +519,10 @@ private:
         return to_string((stack_size - stack_loc - 1) * 8);
     }
 
+    string get_new_label() {
+        return "label_" + to_string(label_count++);
+    }
+
     void push_stack(const string&reg) {
         asm_out << "    push " << reg << endl;
         stack_size++;
@@ -637,7 +647,8 @@ private:
         asm_out << "    mov rax, 12\n    syscall\n";
     }
 
-    string get_new_label() {
-        return "label_" + to_string(label_count++);
+    void read_char() {
+        asm_out<< "    inc rsp\n    mov rax, 0\n    mov rdi, 0\n    mov rdx, 1\n    lea rsi, [rsp]\n    syscall\n";
+        stack_size++;
     }
 };

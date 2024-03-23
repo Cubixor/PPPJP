@@ -47,9 +47,13 @@ struct NodeTermArrIdent {
     NodeExpr* index{};
 };
 
+struct NodeTermReadChar {
+    Token token;
+};
+
 struct NodeTerm {
     variant<NodeTermCharLit *, NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *, NodeTermArrIdent
-        *, NodeTermStringLit *, NodeTermArray *> var;
+        *, NodeTermStringLit *, NodeTermArray *, NodeTermReadChar *> var;
 };
 
 struct NodeBinExpr {
@@ -348,6 +352,16 @@ public:
                 next_token({TokenType::double_quote}, true);
 
                 term->var = term_string_lit;
+                break;
+            }
+            case TokenType::read_char: {
+                next_token({TokenType::paren_open}, true);
+                next_token({TokenType::paren_close}, true);
+
+                auto* term_read_char = allocator.alloc<NodeTermReadChar>();
+                term_read_char->token = *it;
+
+                term->var = term_read_char;
                 break;
             }
             default: assert(false); //Unreachable
