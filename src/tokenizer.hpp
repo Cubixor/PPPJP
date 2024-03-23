@@ -25,6 +25,7 @@ enum class TokenType {
     var_type_int,
     var_type_boolean,
     var_type_char,
+    var_type_string,
     var_ident,
     var_assign,
     add,
@@ -57,6 +58,8 @@ enum class TokenType {
     ofsize,
     element,
     comma,
+    double_quote,
+    string_lit,
 };
 
 struct Token {
@@ -67,11 +70,11 @@ struct Token {
 
 const inline set stmt_tokens = {
     TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
-    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print_int, TokenType::array
+    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print_int, TokenType::print_char, TokenType::array
 };
 const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
 const inline set term_tokens = {
-    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote
+    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote, TokenType::string_lit
 };
 const inline set arithmetic_tokens = {
     TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
@@ -81,7 +84,9 @@ const inline set boolean_tokens = {
     TokenType::less_equal, TokenType::logical_or, TokenType::logical_and, TokenType::logical_not
 };
 const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and, TokenType::logical_not};
-const inline set var_types = {TokenType::var_type_int, TokenType::var_type_boolean, TokenType::var_type_char};
+const inline set var_types = {
+    TokenType::var_type_int, TokenType::var_type_boolean, TokenType::var_type_char, TokenType::var_type_string
+};
 
 
 inline unordered_map<TokenType, string> token_names = {
@@ -99,6 +104,7 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::var_type_int, "całkowita"},
     {TokenType::var_type_boolean, "logiczna"},
     {TokenType::var_type_char, "znak"},
+    {TokenType::var_type_string, "tekstowa"},
     {TokenType::var_ident, "<zmienna>"},
     {TokenType::var_assign, "równa"},
     {TokenType::add, "dodać"},
@@ -126,11 +132,13 @@ inline unordered_map<TokenType, string> token_names = {
     {TokenType::logical_not, "nie"},
     {TokenType::minus, "minus"},
     {TokenType::single_quote, "'"},
+    {TokenType::double_quote, "\""},
     {TokenType::character, "<znak>"},
     {TokenType::array, "tablica"},
     {TokenType::ofsize, "rozmiaru"},
     {TokenType::element, "element"},
     {TokenType::comma, ","},
+    {TokenType::string_lit, "<tekst>"},
 };
 
 static string get_token_names(const set<TokenType>&expected) {
@@ -270,6 +278,19 @@ public:
                 create_from_buff();
 
                 tokens.push_back(token.value());
+
+                if (token.value().type == TokenType::double_quote) {
+                    const int start = ++i;
+                    while (contents[i] != '"' && i < contents.length()) {
+                        i++;
+                    }
+                    const string str = contents.substr(start, i - start);
+                    tokens.push_back(Token{TokenType::string_lit, str, token.value().line});
+
+                    if (i < contents.length()) {
+                        tokens.push_back(create_char_token('"').value());
+                    }
+                }
             }
             else {
                 buff += contents[i];
@@ -340,6 +361,7 @@ private:
         {'`', TokenType::backtick},
         {':', TokenType::colon},
         {'\'', TokenType::single_quote},
+        {'"', TokenType::double_quote},
         {',', TokenType::comma},
     };
 
@@ -362,6 +384,7 @@ private:
         {"wyświetl_znak", TokenType::print_char},
         {"logiczna", TokenType::var_type_boolean},
         {"znak", TokenType::var_type_char},
+        {"tekstowa", TokenType::var_type_char},
         {"równe", TokenType::equal},
         {"różne", TokenType::not_equal},
         {"większe", TokenType::greater},

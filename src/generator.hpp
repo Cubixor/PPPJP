@@ -22,12 +22,17 @@ public:
     }
 
     static void check_token(const TokenType result_type, const TokenType expected_type, const int line) {
-        if (expected_type != TokenType::null && result_type != expected_type) {
-            cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({
-                expected_type
-            }) << "' \n\t w linijce " << line << endl;
-            exit(EXIT_FAILURE);
-        }
+        if (expected_type == TokenType::null) return;
+        if (result_type == expected_type)return;
+
+        //TODO Only temporarily
+        if (expected_type == TokenType::var_type_int && result_type == TokenType::var_type_char) return;
+        if (expected_type == TokenType::var_type_char && result_type == TokenType::var_type_int) return;
+
+        cerr << "[BŁĄD] [Analisa semantyczna] Niezgodność typu danych, oczekiwano `" + get_token_names({
+            expected_type
+        }) << "' \n\t w linijce " << line << endl;
+        exit(EXIT_FAILURE);
     }
 
     static void check_operator(const TokenType opr, const TokenType expected_type, const int line) {
@@ -165,7 +170,7 @@ public:
         visit(visitor, expr->var);
     }
 
-    void generate_term(NodeTerm* term, const TokenType expected_type) {
+    void generate_term(NodeTerm* term, const TokenType expected_type, Var* var = nullptr) {
         struct TermVisitor {
             Generator&gen;
             TokenType expected_type;
@@ -188,6 +193,12 @@ public:
                 const int c = static_cast<unsigned char>(term_char_lit->char_lit.value.value()[0]);
                 gen.mov_reg(RAX, to_string(c));
                 gen.push_stack(RAX);
+            }
+
+            void operator()(const NodeTermStringLit* term_string_lit) const {
+                check_token(TokenType::var_type_string, expected_type, term_string_lit->array_expr->token.line);
+                //TODO
+                //gen.generate_array_expr(term_string_lit->array_expr, );
             }
 
             void operator()(const NodeTermIdent* term_ident) const {
@@ -224,7 +235,13 @@ public:
 
                 gen.mov_reg(RBX, "qword [rax]");
                 gen.push_stack(RBX);
+            }
 
+
+            void operator()(const NodeTermArray* array_expr) const {
+                check_token(TokenType::array, expected_type, array_expr->token.line);
+                //TODO
+                //gen.generate_array_expr(array_expr, *var);
             }
         };
         TermVisitor visitor{*this, expected_type};
@@ -259,15 +276,13 @@ public:
         }
     }
 
-    void generate_array_expr(const NodeArrayExpr* arr_expr, const Var&var) {
-
-
-        for (int index =0;index<arr_expr->exprs.size(); index++) {
+    void generate_array_expr(const NodeTermArray* arr_expr, const Var&var) {
+        for (int index = 0; index < arr_expr->exprs.size(); index++) {
             generate_expr(arr_expr->exprs.at(index), var.type);
 
             const string pointer_offset = "QWORD [rsp + " + get_location_offset(var.location) + "]";
             mov_reg(RAX, pointer_offset);
-            mov_reg(RBX, to_string(8*index));
+            mov_reg(RBX, to_string(8 * index));
             add(RAX, RBX);
             pop_stack(RBX);
             mov_reg("qword [rax]", RBX);
@@ -410,14 +425,14 @@ public:
                 gen.alloc_mem();
 
                 gen.heap_pointers.push(gen.stack_size);
-                auto var  = Var{gen.stack_size, stmt_array->type};
+                auto var = Var{gen.stack_size, stmt_array->type};
                 gen.stack_vars.insert({*ident, var});
 
                 gen.push_stack(RAX);
 
 
                 if (stmt_array->contents.has_value()) {
-                    const NodeArrayExpr* array_expr = stmt_array->contents.value();
+                    const NodeTermArray* array_expr = stmt_array->contents.value();
 
                     gen.generate_array_expr(array_expr, var);
                 }
@@ -525,7 +540,7 @@ private:
     }
 
     void divide(const string&reg) {
-        asm_out << "    div " << reg << endl;
+        asm_out << "    xor rdx, rdx\n    div " << reg << endl;
     }
 
     void logical_and(const string&reg1, const string&reg2) {

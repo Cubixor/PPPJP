@@ -12,6 +12,12 @@ using namespace std;
 struct NodeExpr;
 struct NodeStatement;
 
+
+struct NodeTermArray {
+    Token token;
+    vector<NodeExpr *> exprs;
+};
+
 struct NodeTermIntLit {
     Token int_lit;
 };
@@ -22,6 +28,10 @@ struct NodeTermBoolLit {
 
 struct NodeTermCharLit {
     Token char_lit;
+};
+
+struct NodeTermStringLit {
+    NodeTermArray* array_expr{};
 };
 
 struct NodeTermIdent {
@@ -39,7 +49,7 @@ struct NodeTermArrIdent {
 
 struct NodeTerm {
     variant<NodeTermCharLit *, NodeTermBoolLit *, NodeTermIntLit *, NodeTermIdent *, NodeTermParen *, NodeTermArrIdent
-        *> var;
+        *, NodeTermStringLit *, NodeTermArray *> var;
 };
 
 struct NodeBinExpr {
@@ -67,16 +77,11 @@ struct NodeStmtVariable {
     NodeExpr* expr{};
 };
 
-struct NodeArrayExpr {
-    Token token;
-    vector<NodeExpr *> exprs;
-};
-
 struct NodeStmtArray {
     Token ident;
     TokenType type{};
     NodeExpr* size{};
-    optional<NodeArrayExpr*> contents;
+    optional<NodeTermArray *> contents;
 };
 
 struct NodeStmtScope {
@@ -318,6 +323,33 @@ public:
                 term->var = term_char_lit;
                 break;
             }
+            case TokenType::double_quote: {
+                next_token({TokenType::string_lit}, true);
+
+                string string_lit = it->value.value();
+
+                auto* term_string_lit = allocator.alloc<NodeTermStringLit>();
+                auto* array_expr = allocator.alloc<NodeTermArray>();
+
+                array_expr->token = *it;
+                for (const char c: string_lit) {
+                    auto* expr_char = allocator.alloc<NodeExpr>();
+                    auto* term_char = allocator.alloc<NodeTerm>();
+                    auto* term_char_lit = allocator.alloc<NodeTermCharLit>();
+
+                    term_char_lit->char_lit = Token{TokenType::character, to_string(c), it->line};
+                    term_char->var = term_char_lit;
+                    expr_char->var = term_char;
+                    array_expr->exprs.push_back(expr_char);
+                }
+
+                term_string_lit->array_expr = array_expr;
+
+                next_token({TokenType::double_quote}, true);
+
+                term->var = term_string_lit;
+                break;
+            }
             default: assert(false); //Unreachable
         }
 
@@ -325,10 +357,10 @@ public:
         return term;
     }
 
-    NodeArrayExpr* parse_array_expr() {
+    NodeTermArray* parse_array_expr() {
         next_token({TokenType::cur_brkt_open}, true);
 
-        auto* array_expr = allocator.alloc<NodeArrayExpr>();
+        auto* array_expr = allocator.alloc<NodeTermArray>();
         array_expr->token = *it;
 
         do {
