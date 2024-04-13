@@ -28,21 +28,21 @@ tablica całkowita `e` rozmiaru [pięć]
 `e` element [cztery] równa ((`a` modulo [cztery]) razy [osiem] dodać [sześć])  odjąć [dwanaście] podzielić [minus sześć]
 
 jeśli (`a` większe [sto] oraz `b`): {
-	wyświetl_liczbę(`e` element [cztery])
+    wyświetl_liczbę(`e` element [cztery])
 } przeciwnie jeśli ( nie (prawda lub fałsz) równe ((nie prawda) oraz (nie fałsz)) ): {
-	wyświetl_znak('!')
+    wyświetl_znak('!')
 } przeciwnie: {
-	kończwaść([jeden])
+    kończwaść([jeden])
 }
 
 powtarzaj:
-	przerwij
+    przerwij
 
 powtarzaj jeśli (`a` mniejszerówne [dwa tysiące sto czterdzieści]): {
     `a` równa `a` dodać [jeden]
-	jeśli (`a` różne [dwa tysiące sto trzydzieści osiem]): {
-		kontynuuj
-	}
+    jeśli (`a` różne [dwa tysiące sto trzydzieści osiem]): {
+    	kontynuuj
+    }
 }
 ```
 
@@ -57,24 +57,24 @@ char d[] = {'L', 'O', 'L'};
 int e[5];
 
 e[0] = 1;
-e[4] = ((a % 4) * 8 + 6) - 12 / -6; 
+e[4] = ((a % 4) * 8 + 6) - 12 / 6; 
 
 if(a>100 && b){
-	std::cout<<e[4];
+    std::cout<<e[4];
 }else if (!(true || false) == (!(true) && !(false))){
-	std::cout<<'!';
+    std::cout<<'!';
 }else{
-	exit(1);
+    exit(1);
 }
 
 while(true)
-	break;
+    break;
 
 while(a<=2040){
     a++;
-	if(a!=2138){
-		continue;
-	}
+    if(a!=2138){
+	continue;
+    }
 }
 ```
 
