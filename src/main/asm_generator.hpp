@@ -254,7 +254,7 @@ private:
         }*/
 
         erase_if(stack_vars, [this](auto it) {
-            return it.second >= scopes.back();
+            return it.second > scopes.back();
         });
 
 
