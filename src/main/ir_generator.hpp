@@ -572,7 +572,7 @@ private:
     };
 
     std::string new_temp_var() {
-        return "t" + std::to_string(temp_var_counter++);
+        return "#" + std::to_string(temp_var_counter++);
     }
 
     std::string get_new_label() {

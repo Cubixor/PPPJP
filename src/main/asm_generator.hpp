@@ -15,7 +15,7 @@ public:
     }
 
     void assign_variable(const std::string &ident, const std::string &value) {
-        if (ident.starts_with("t")) {
+        if (ident[0] == '#') {
             asm_push_stack(value);
         } else {
             const bool reassignment = stack_vars.contains(ident);
@@ -270,7 +270,7 @@ private:
     void load_stack_var(const std::string &ident, const std::string &reg) {
         if (is_num(ident)) {
             asm_mov_reg(reg, ident);
-        } else if (ident[0] == 't') {
+        } else if (ident[0] == '#') {
             asm_pop_stack(reg);
         } else {
             const std::string pointer = get_var_pointer(ident);
