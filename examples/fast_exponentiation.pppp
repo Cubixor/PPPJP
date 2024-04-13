@@ -1,0 +1,16 @@
+# Fast exponentiation algorithm
+# Raise a number to the power of n in O(log(n)) time complexity
+
+zmienna całkowita `podstawa` równa [trzy]
+zmienna całkowita `wykładnik` równa [osiem]
+zmienna całkowita `wynik` równa [jeden]
+
+powtarzaj jeśli (`wykładnik` większe [zero]): {
+    jeśli(`wykładnik` modulo [dwa] równe [jeden]): {
+        `wynik` równa `wynik` razy `podstawa`
+    }
+    `podstawa` równa `podstawa` razy `podstawa`
+    `wykładnik` równa `wykładnik` podzielić [dwa]
+}
+
+wyświetl_liczbę(`wynik`)

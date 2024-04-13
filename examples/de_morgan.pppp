@@ -1,0 +1,11 @@
+# Test of the language boolean logic based on De Morgan's laws
+# The test should pass (there should be 1 and 2 printed out) regardless of the values of A and B variables
+
+zmienna logiczna `A` równa prawda
+zmienna logiczna `B` równa prawda
+
+zmienna logiczna `z1` równa ( nie (`A` lub `B`) równe ((nie `A`) oraz (nie `B`)) )
+zmienna logiczna `z2` równa ( nie (`A` oraz `B`) równe ((nie `A`) lub (nie `B`)) )
+
+jeśli (`z1`): wyświetl_liczbę([jeden])
+jeśli (`z2`): wyświetl_liczbę([dwa])

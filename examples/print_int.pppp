@@ -1,0 +1,26 @@
+# Print an integer using only function for printing chars
+
+zmienna całkowita `liczba` równa [dwa tysiące sto trzydzieści siedem]
+zmienna całkowita `ile_znaków` równa [zero]
+
+zmienna całkowita `temp` równa `liczba`
+powtarzaj jeśli(`temp` większe [zero]): {
+    `temp` równa `temp` podzielić [dziesięć]
+    `ile_znaków` równa `ile_znaków` dodać [jeden]
+}
+
+zmienna całkowita `indeks` równa `ile_znaków` odjąć [jeden]
+tablica znak `liczba_tekst` rozmiaru `ile_znaków`
+powtarzaj jeśli(`indeks` większerówne [zero]): {
+    `liczba_tekst` element `indeks` równa `liczba` modulo [dziesięć] dodać '0'
+    `liczba` równa `liczba` podzielić [dziesięć]
+    `indeks` równa `indeks` odjąć [jeden]
+}
+
+`indeks` równa `indeks` dodać [jeden]
+powtarzaj jeśli(`indeks` mniejsze `ile_znaków`): {
+    wyświetl_znak(`liczba_tekst` element `indeks`)
+    `indeks` równa `indeks` dodać [jeden]
+}
+
+wyświetl_znak('\n')
