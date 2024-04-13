@@ -6,7 +6,7 @@
     <function>
     <scope>
     zmienna <type> `ident` równa <expr> 
-    tablica <type> `ident` rozmiaru <numerical_expr>
+    tablica <type> `ident` rozmiaru <int_expr>
     tablica <type> `ident` równa <array_expr>
     `ident` równa <expr>
     `ident` element <expr> równa <expr>
@@ -18,7 +18,9 @@
     
 }
 <function> → {
-    kończwaść ( <numerical_expr> )
+    kończwaść ( <int_expr> )
+    wyświetl_liczbę ( <int_expr> )
+    wyświetl_znak ( <char_expr> )
 }
 <loop_flow_stmt> → {
     przerwij
@@ -33,13 +35,14 @@
     znak
 }
 <expr> → {
-    <numerical_expr>
+    <int_expr>
     <boolean_expr>
+    <char_expr>
 }
 <array_expr> → {
-    <expr>*
+    {<expr>, <expr>...}
 }
-<numerical_expr> → {
+<int_expr> → {
     <int_term>
     <arithmetic_expr>
 }
@@ -52,7 +55,6 @@
     <boolean_math_expr>
     <boolean_logic_expr>
 }
-
 <boolean_term> → {
     <boolean_literal>
     `identifier`
@@ -62,34 +64,26 @@
     fałsz
 }
 <arithmetic_expr> → {
-    (5) <numerical_expr> modulo <numerical_expr>
-    (5) <numerical_expr> razy <numerical_expr>
-    (5) <numerical_expr> podzielić <numerical_expr>
-    (4) <numerical_expr> dodać <numerical_expr>
-    (4) <numerical_expr> odjąć <numerical_expr>
+    (5) <int_expr> modulo <int_expr>
+    (5) <int_expr> razy <int_expr>
+    (5) <int_expr> podzielić <int_expr>
+    (4) <int_expr> dodać <int_expr>
+    (4) <int_expr> odjąć <int_expr>
 }
 <boolean_math_expr> → {
-    (3) <numerical_expr> równe <numerical_expr>
-    (3) <numerical_expr> różne <numerical_expr>
-    (3) <numerical_expr> większe od <numerical_expr>
-    (3) <numerical_expr> większe równe <numerical_expr>
-    (3) <numerical_expr> mniejsze <numerical_expr>
-    (3) <numerical_expr> mniejsze równe <numerical_expr>
+    (3) <int_expr> równe <int_expr>
+    (3) <int_expr> różne <int_expr>
+    (3) <int_expr> większe od <int_expr>
+    (3) <int_expr> większe równe <int_expr>
+    (3) <int_expr> mniejsze <int_expr>
+    (3) <int_expr> mniejsze równe <int_expr>
 }
 <boolean_logic_expr> → {
     (2) nie <boolean_expr>
     (1) <boolean_expr> oraz <boolean_expr>
     (1) <boolean_expr> lub <boolean_expr>
 }
-```
-
-## Code example //TODO
-
-```
-zmienna całkowita `a1` równa [dwa tysiące dwadzieścia cztery]
-
-jeśliby `a1` było równe [pięć] to:
-§1 wyświetlić ( "Tak było równo" )
-przeciwnie:
-§1 kończwaść [jeden]
-```
+<char_term> → {
+    `identifier`
+    '<ascii_char>'
+}
