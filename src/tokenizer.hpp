@@ -7,8 +7,6 @@
 #include <utility>
 #include <vector>
 
-using namespace std;
-
 enum class TokenType {
     null,
     exit,
@@ -30,7 +28,7 @@ enum class TokenType {
     var_assign,
     add,
     multiply,
-    substract,
+    subtract,
     divide,
     modulo,
     cond_if,
@@ -55,7 +53,7 @@ enum class TokenType {
     single_quote,
     character,
     array,
-    ofsize,
+    of_size,
     element,
     comma,
     double_quote,
@@ -65,85 +63,87 @@ enum class TokenType {
 
 struct Token {
     TokenType type;
-    optional<string> value;
+    std::optional<std::string> value;
     int line;
 };
 
-const inline set stmt_tokens = {
-    TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
-    TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print_int, TokenType::print_char, TokenType::array
+const inline std::set stmt_tokens = {
+        TokenType::var_decl, TokenType::exit, TokenType::cur_brkt_open, TokenType::backtick, TokenType::cond_if,
+        TokenType::loop, TokenType::loop_break, TokenType::loop_continue, TokenType::print_int, TokenType::print_char,
+        TokenType::array
 };
-const inline set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
-const inline set term_tokens = {
-    TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit, TokenType::single_quote, TokenType::string_lit, TokenType::read_char
+const inline std::set int_tokens = {TokenType::int_lit_num, TokenType::int_lit_mul};
+const inline std::set term_tokens = {
+        TokenType::sq_brkt_open, TokenType::backtick, TokenType::paren_open, TokenType::bool_lit,
+        TokenType::single_quote, TokenType::string_lit, TokenType::read_char
 };
-const inline set arithmetic_tokens = {
-    TokenType::add, TokenType::substract, TokenType::divide, TokenType::multiply, TokenType::modulo
+const inline std::set arithmetic_tokens = {
+        TokenType::add, TokenType::subtract, TokenType::divide, TokenType::multiply, TokenType::modulo
 };
-const inline set boolean_tokens = {
-    TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
-    TokenType::less_equal, TokenType::logical_or, TokenType::logical_and, TokenType::logical_not
+const inline std::set boolean_tokens = {
+        TokenType::equal, TokenType::not_equal, TokenType::greater, TokenType::greater_equal, TokenType::less,
+        TokenType::less_equal, TokenType::logical_or, TokenType::logical_and, TokenType::logical_not
 };
-const inline set logical_tokens = {TokenType::logical_or, TokenType::logical_and, TokenType::logical_not};
-const inline set var_types = {
-    TokenType::var_type_int, TokenType::var_type_boolean, TokenType::var_type_char, TokenType::var_type_string
-};
-
-
-inline unordered_map<TokenType, string> token_names = {
-    {TokenType::exit, "kończwaść"},
-    {TokenType::int_lit_num, "<liczba>"},
-    {TokenType::int_lit_mul, "<liczba>"},
-    {TokenType::paren_open, "("},
-    {TokenType::paren_close, ")"},
-    {TokenType::sq_brkt_open, "["},
-    {TokenType::sq_brkt_close, "]"},
-    {TokenType::cur_brkt_close, "}"},
-    {TokenType::cur_brkt_open, "{"},
-    {TokenType::backtick, "`"},
-    {TokenType::var_decl, "zmienna"},
-    {TokenType::var_type_int, "całkowita"},
-    {TokenType::var_type_boolean, "logiczna"},
-    {TokenType::var_type_char, "znak"},
-    {TokenType::var_type_string, "tekstowa"},
-    {TokenType::var_ident, "<zmienna>"},
-    {TokenType::var_assign, "równa"},
-    {TokenType::add, "dodać"},
-    {TokenType::multiply, "razy"},
-    {TokenType::substract, "odjąć"},
-    {TokenType::divide, "podzielić"},
-    {TokenType::modulo, "modulo"},
-    {TokenType::cond_if, "jeśli"},
-    {TokenType::cond_else, "przeciwnie"},
-    {TokenType::colon, ":"},
-    {TokenType::loop, "powtarzaj"},
-    {TokenType::loop_break, "przerwij"},
-    {TokenType::loop_continue, "kontynuuj"},
-    {TokenType::print_int, "wyświetl_liczbę"},
-    {TokenType::print_char, "wyświetl_znak"},
-    {TokenType::bool_lit, "<logiczna>"},
-    {TokenType::equal, "równe"},
-    {TokenType::not_equal, "różne"},
-    {TokenType::greater, "większe"},
-    {TokenType::greater_equal, "większerówne"},
-    {TokenType::less, "mniejsze"},
-    {TokenType::less_equal, "mniejszerówne"},
-    {TokenType::logical_and, "oraz"},
-    {TokenType::logical_or, "lub"},
-    {TokenType::logical_not, "nie"},
-    {TokenType::minus, "minus"},
-    {TokenType::single_quote, "'"},
-    {TokenType::double_quote, "\""},
-    {TokenType::character, "<znak>"},
-    {TokenType::array, "tablica"},
-    {TokenType::ofsize, "rozmiaru"},
-    {TokenType::element, "element"},
-    {TokenType::comma, ","},
-    {TokenType::string_lit, "<tekst>"},
-    {TokenType::read_char, "wczytaj_znak"},
+const inline std::set logical_tokens = {TokenType::logical_or, TokenType::logical_and, TokenType::logical_not};
+const inline std::set var_types = {
+        TokenType::var_type_int, TokenType::var_type_boolean, TokenType::var_type_char, TokenType::var_type_string
 };
 
-static string get_token_names(const set<TokenType>&expected) {
+
+const inline std::unordered_map<TokenType, std::string> token_names = {
+        {TokenType::exit,             "kończwaść"},
+        {TokenType::int_lit_num,      "<liczba>"},
+        {TokenType::int_lit_mul,      "<liczba>"},
+        {TokenType::paren_open,       "("},
+        {TokenType::paren_close,      ")"},
+        {TokenType::sq_brkt_open,     "["},
+        {TokenType::sq_brkt_close,    "]"},
+        {TokenType::cur_brkt_close,   "}"},
+        {TokenType::cur_brkt_open,    "{"},
+        {TokenType::backtick,         "`"},
+        {TokenType::var_decl,         "zmienna"},
+        {TokenType::var_type_int,     "całkowita"},
+        {TokenType::var_type_boolean, "logiczna"},
+        {TokenType::var_type_char,    "znak"},
+        {TokenType::var_type_string,  "tekstowa"},
+        {TokenType::var_ident,        "<zmienna>"},
+        {TokenType::var_assign,       "równa"},
+        {TokenType::add,              "dodać"},
+        {TokenType::multiply,         "razy"},
+        {TokenType::subtract,         "odjąć"},
+        {TokenType::divide,           "podzielić"},
+        {TokenType::modulo,           "modulo"},
+        {TokenType::cond_if,          "jeśli"},
+        {TokenType::cond_else,        "przeciwnie"},
+        {TokenType::colon,            ":"},
+        {TokenType::loop,             "powtarzaj"},
+        {TokenType::loop_break,       "przerwij"},
+        {TokenType::loop_continue,    "kontynuuj"},
+        {TokenType::print_int,        "wyświetl_liczbę"},
+        {TokenType::print_char,       "wyświetl_znak"},
+        {TokenType::bool_lit,         "<logiczna>"},
+        {TokenType::equal,            "równe"},
+        {TokenType::not_equal,        "różne"},
+        {TokenType::greater,          "większe"},
+        {TokenType::greater_equal,    "większerówne"},
+        {TokenType::less,             "mniejsze"},
+        {TokenType::less_equal,       "mniejszerówne"},
+        {TokenType::logical_and,      "oraz"},
+        {TokenType::logical_or,       "lub"},
+        {TokenType::logical_not,      "nie"},
+        {TokenType::minus,            "minus"},
+        {TokenType::single_quote,     "'"},
+        {TokenType::double_quote,     "\""},
+        {TokenType::character,        "<znak>"},
+        {TokenType::array,            "tablica"},
+        {TokenType::of_size,          "rozmiaru"},
+        {TokenType::element,          "element"},
+        {TokenType::comma,            ","},
+        {TokenType::string_lit,       "<tekst>"},
+        {TokenType::read_char,        "wczytaj_znak"},
+};
+
+static std::string get_token_names(const std::set<TokenType> &expected) {
     if (expected == stmt_tokens) {
         return "<instrukcja>";
     }
@@ -158,10 +158,10 @@ static string get_token_names(const set<TokenType>&expected) {
     }
 
 
-    string result;
+    std::string result;
 
     for (TokenType type: expected) {
-        result += token_names[type] + '/';
+        result += token_names.at(type) + '/';
     }
 
     result.pop_back();
@@ -170,13 +170,14 @@ static string get_token_names(const set<TokenType>&expected) {
 }
 
 static int get_prec(const TokenType type) {
+
     switch (type) {
         case TokenType::multiply:
         case TokenType::divide:
         case TokenType::modulo:
             return 5;
         case TokenType::add:
-        case TokenType::substract:
+        case TokenType::subtract:
             return 4;
         case TokenType::equal:
         case TokenType::not_equal:
@@ -194,64 +195,64 @@ static int get_prec(const TokenType type) {
     }
 }
 
-inline unordered_map<string, int> num_values = {
-    {"zero", 0},
-    {"jeden", 1},
-    {"dwa", 2},
-    {"trzy", 3},
-    {"cztery", 4},
-    {"pięć", 5},
-    {"sześć", 6},
-    {"siedem", 7},
-    {"osiem", 8},
-    {"dziewięć", 9},
-    {"dziesięć", 10},
-    {"jedenaście", 11},
-    {"dwanaście", 12},
-    {"trzynaście", 13},
-    {"czternaście", 14},
-    {"piętnaście", 15},
-    {"szesnaście", 16},
-    {"siedemnaście", 17},
-    {"osiemnaście", 18},
-    {"dzięwiętnaście", 19},
-    {"dwadzieścia", 20},
-    {"trzydzieści", 30},
-    {"czterdzieści", 40},
-    {"pięćdziesiąt", 50},
-    {"sześćdziesiąt", 60},
-    {"siedemdziesiąt", 70},
-    {"osiemdziesiąt", 80},
-    {"dziewięćdziesiąt", 90},
-    {"sto", 100},
-    {"dwieście", 200},
-    {"trzysta", 300},
-    {"czterysta", 400},
-    {"pięćset", 500},
-    {"sześćset", 600},
-    {"siedemset", 700},
-    {"osiemset", 800},
-    {"dziewięćset", 900},
-    {"tysiąc", 1000},
-    {"milion", 1000000},
-    {"miliard", 1000000000}
+const inline std::unordered_map<std::string, int> num_values = {
+        {"zero",             0},
+        {"jeden",            1},
+        {"dwa",              2},
+        {"trzy",             3},
+        {"cztery",           4},
+        {"pięć",             5},
+        {"sześć",            6},
+        {"siedem",           7},
+        {"osiem",            8},
+        {"dziewięć",         9},
+        {"dziesięć",         10},
+        {"jedenaście",       11},
+        {"dwanaście",        12},
+        {"trzynaście",       13},
+        {"czternaście",      14},
+        {"piętnaście",       15},
+        {"szesnaście",       16},
+        {"siedemnaście",     17},
+        {"osiemnaście",      18},
+        {"dziewiętnaście",   19},
+        {"dwadzieścia",      20},
+        {"trzydzieści",      30},
+        {"czterdzieści",     40},
+        {"pięćdziesiąt",     50},
+        {"sześćdziesiąt",    60},
+        {"siedemdziesiąt",   70},
+        {"osiemdziesiąt",    80},
+        {"dziewięćdziesiąt", 90},
+        {"sto",              100},
+        {"dwieście",         200},
+        {"trzysta",          300},
+        {"czterysta",        400},
+        {"pięćset",          500},
+        {"sześćset",         600},
+        {"siedemset",        700},
+        {"osiemset",         800},
+        {"dziewięćset",      900},
+        {"tysiąc",           1000},
+        {"milion",           1000000},
+        {"miliard",          1000000000}
 };
 
-inline unordered_map<string, int> multipliers = {
-    {"tysiące", 1000},
-    {"tysięcy", 1000},
-    {"miliony", 1000000},
-    {"milionów", 1000000},
-    {"miliardy", 1000000000},
-    {"miliardów", 1000000000},
+const inline std::unordered_map<std::string, int> multipliers = {
+        {"tysiące",   1000},
+        {"tysięcy",   1000},
+        {"miliony",   1000000},
+        {"milionów",  1000000},
+        {"miliardy",  1000000000},
+        {"miliardów", 1000000000},
 };
 
 class Tokenizer {
 public:
-    explicit Tokenizer(string contents) : contents(move(contents)) {
+    explicit Tokenizer(std::string contents) : contents(std::move(contents)) {
     }
 
-    vector<Token> tokenize() {
+    std::vector<Token> tokenize() {
         contents += " ";
         bool comment = false;
         for (int i = 0; i < contents.length(); i++) {
@@ -275,33 +276,33 @@ public:
 
             if (isspace(contents[i]) != 0) {
                 create_from_buff();
-            }
-            else if (auto token = create_char_token(contents[i])) {
+            } else if (auto token = create_char_token(contents[i])) {
                 create_from_buff();
 
                 tokens.push_back(token.value());
 
+                /*
                 if (token.value().type == TokenType::double_quote) {
                     const int start = ++i;
                     while (contents[i] != '"' && i < contents.length()) {
                         i++;
                     }
-                    const string str = contents.substr(start, i - start);
-                    tokens.push_back(Token{TokenType::string_lit, str, token.value().line});
+                    const std::string str = contents.substr(start, i - start);
+                    tokens.emplace_back(TokenType::string_lit, str, token.value().line);
 
                     if (i < contents.length()) {
                         tokens.push_back(create_char_token('"').value());
                     }
                 }
-            }
-            else {
+                */
+            } else {
                 buff += contents[i];
             }
         }
         return tokens;
     }
 
-    [[nodiscard]] optional<Token> create_char_token(const char c) const {
+    [[nodiscard]] std::optional<Token> create_char_token(const char c) const {
         if (const auto it = charTokenMap.find(c); it != charTokenMap.end()) {
             return Token{it->second, {}, line};
         }
@@ -337,7 +338,7 @@ public:
             return Token{TokenType::int_lit_mul, buff, line};
         }
 
-        if (buff.length() == 1) {
+        if (tokens.back().type == TokenType::single_quote && buff.length() == 1) {
             return Token{TokenType::character, buff, line};
         }
         if (buff == "\\n") {
@@ -348,58 +349,58 @@ public:
     }
 
 private:
-    vector<Token> tokens;
-    string buff;
-    string contents;
+    std::vector<Token> tokens;
+    std::string buff;
+    std::string contents;
     int line = 1;
 
     const std::map<char, TokenType> charTokenMap = {
-        {'(', TokenType::paren_open},
-        {')', TokenType::paren_close},
-        {'[', TokenType::sq_brkt_open},
-        {']', TokenType::sq_brkt_close},
-        {'{', TokenType::cur_brkt_open},
-        {'}', TokenType::cur_brkt_close},
-        {'`', TokenType::backtick},
-        {':', TokenType::colon},
-        {'\'', TokenType::single_quote},
-        {'"', TokenType::double_quote},
-        {',', TokenType::comma},
+            {'(',  TokenType::paren_open},
+            {')',  TokenType::paren_close},
+            {'[',  TokenType::sq_brkt_open},
+            {']',  TokenType::sq_brkt_close},
+            {'{',  TokenType::cur_brkt_open},
+            {'}',  TokenType::cur_brkt_close},
+            {'`',  TokenType::backtick},
+            {':',  TokenType::colon},
+            {'\'', TokenType::single_quote},
+            {'"',  TokenType::double_quote},
+            {',',  TokenType::comma},
     };
 
     const std::map<std::string, TokenType> tokenMap = {
-        {"kończwaść", TokenType::exit},
-        {"zmienna", TokenType::var_decl},
-        {"całkowita", TokenType::var_type_int},
-        {"równa", TokenType::var_assign},
-        {"dodać", TokenType::add},
-        {"odjąć", TokenType::substract},
-        {"razy", TokenType::multiply},
-        {"podzielić", TokenType::divide},
-        {"modulo", TokenType::modulo},
-        {"jeśli", TokenType::cond_if},
-        {"przeciwnie", TokenType::cond_else},
-        {"powtarzaj", TokenType::loop},
-        {"przerwij", TokenType::loop_break},
-        {"kontynuuj", TokenType::loop_continue},
-        {"wyświetl_liczbę", TokenType::print_int},
-        {"wyświetl_znak", TokenType::print_char},
-        {"logiczna", TokenType::var_type_boolean},
-        {"znak", TokenType::var_type_char},
-        {"tekstowa", TokenType::var_type_char},
-        {"równe", TokenType::equal},
-        {"różne", TokenType::not_equal},
-        {"większe", TokenType::greater},
-        {"mniejsze", TokenType::less},
-        {"większerówne", TokenType::greater_equal},
-        {"mniejszerówne", TokenType::less_equal},
-        {"oraz", TokenType::logical_and},
-        {"lub", TokenType::logical_or},
-        {"nie", TokenType::logical_not},
-        {"minus", TokenType::minus},
-        {"tablica", TokenType::array},
-        {"rozmiaru", TokenType::ofsize},
-        {"element", TokenType::element},
-        {"wczytaj_znak", TokenType::read_char},
+            {"kończwaść",       TokenType::exit},
+            {"zmienna",         TokenType::var_decl},
+            {"całkowita",       TokenType::var_type_int},
+            {"równa",           TokenType::var_assign},
+            {"dodać",           TokenType::add},
+            {"odjąć",           TokenType::subtract},
+            {"razy",            TokenType::multiply},
+            {"podzielić",       TokenType::divide},
+            {"modulo",          TokenType::modulo},
+            {"jeśli",           TokenType::cond_if},
+            {"przeciwnie",      TokenType::cond_else},
+            {"powtarzaj",       TokenType::loop},
+            {"przerwij",        TokenType::loop_break},
+            {"kontynuuj",       TokenType::loop_continue},
+            {"wyświetl_liczbę", TokenType::print_int},
+            {"wyświetl_znak",   TokenType::print_char},
+            {"logiczna",        TokenType::var_type_boolean},
+            {"znak",            TokenType::var_type_char},
+            {"tekstowa",        TokenType::var_type_char},
+            {"równe",           TokenType::equal},
+            {"różne",           TokenType::not_equal},
+            {"większe",         TokenType::greater},
+            {"mniejsze",        TokenType::less},
+            {"większerówne",    TokenType::greater_equal},
+            {"mniejszerówne",   TokenType::less_equal},
+            {"oraz",            TokenType::logical_and},
+            {"lub",             TokenType::logical_or},
+            {"nie",             TokenType::logical_not},
+            {"minus",           TokenType::minus},
+            {"tablica",         TokenType::array},
+            {"rozmiaru",        TokenType::of_size},
+            {"element",         TokenType::element},
+            {"wczytaj_znak",    TokenType::read_char},
     };
 };

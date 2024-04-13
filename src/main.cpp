@@ -12,7 +12,7 @@
 using namespace std;
 
 
-string read_file(const string&filename) {
+string read_file(const string &filename) {
     ifstream code_file(filename);
     stringstream content_stream;
     content_stream << code_file.rdbuf();
@@ -22,13 +22,13 @@ string read_file(const string&filename) {
     return content;
 }
 
-void write_file(const string&filename, const string&contents) {
+void write_file(const string &filename, const string &contents) {
     ofstream asm_file(filename);
     asm_file << contents;
     asm_file.close();
 }
 
-int main(const int argc, char* argv[]) {
+int main(const int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "[BŁĄD] Nieprawidłowe użycie! Wpisz: pppjp <plik.pppp>" << endl;
         return 1;
@@ -63,29 +63,29 @@ int main(const int argc, char* argv[]) {
 
 
     //Generate intermediate code, while performing semantic analysis
-    auto irgen_start = chrono::high_resolution_clock::now();
+    auto ir_gen_start = chrono::high_resolution_clock::now();
 
     IRGenerator ir_generator((tree.value()));
     vector<TACInstruction> instructions = ir_generator.generate_program();
 
-    auto irgen_end = chrono::high_resolution_clock::now();
-    auto irgen_time = chrono::duration_cast<chrono::microseconds>(irgen_end - irgen_start);
-    cout << "   [SUKCES] Pomyślnie wygenerowano pośrednią reprezentację kodu!  [" << irgen_time.count() << " μs]" <<
-            endl;
+    auto ir_gen_end = chrono::high_resolution_clock::now();
+    auto ir_gen_time = chrono::duration_cast<chrono::microseconds>(ir_gen_end - ir_gen_start);
+    cout << "   [SUKCES] Pomyślnie wygenerowano pośrednią reprezentację kodu!  [" << ir_gen_time.count() << " μs]" <<
+         endl;
 
 
     write_file(filename + ".ppprw", ir_generator.ir_to_string());
 
 
     //Generate assembly code
-    auto asmgen_start = chrono::high_resolution_clock::now();
+    auto asm_gen_start = chrono::high_resolution_clock::now();
 
     ASMGenerator asm_generator(instructions);
     string asm_code = asm_generator.generate_program();
 
-    auto asmgen_end = chrono::high_resolution_clock::now();
-    auto asmgen_time = chrono::duration_cast<chrono::microseconds>(asmgen_end - asmgen_start);
-    cout << "   [SUKCES] Pomyślnie wygenerowano kod assembly!  [" << asmgen_time.count() << " μs]" << endl;
+    auto asm_gen_end = chrono::high_resolution_clock::now();
+    auto asm_gen_time = chrono::duration_cast<chrono::microseconds>(asm_gen_end - asm_gen_start);
+    cout << "   [SUKCES] Pomyślnie wygenerowano kod assembly!  [" << asm_gen_time.count() << " μs]" << endl;
 
     write_file(filename + ".asm", asm_code);
 
@@ -94,7 +94,7 @@ int main(const int argc, char* argv[]) {
         exit(code);
     }
 
-    cout << "[SUKCES] Pomyślnie skompilowano plik '"<<filename<<"'!" << endl;
+    cout << "[SUKCES] Pomyślnie skompilowano plik '" << filename << "'!" << endl;
 
 
     return 0;
