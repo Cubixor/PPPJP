@@ -32,7 +32,8 @@ public:
 
     void generate_expression(const TACInstruction &instr) {
         load_stack_var(instr.arg1.value(), RAX);
-        load_stack_var(instr.arg2.value(), RBX);
+        if (instr.arg2.has_value())
+            load_stack_var(instr.arg2.value(), RBX);
 
         std::string result_reg = RAX;
 
@@ -331,7 +332,7 @@ private:
     }
 
     void asm_test(const std::string &reg) {
-        asm_out << "    test " << reg << ", " << reg << std::endl;
+        asm_out << "    movzx rax, al\n    test " << reg << ", " << reg << std::endl;
     }
 
     void asm_cmp(const std::string &reg1, const std::string &reg2) {
